@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import OSLog
 
@@ -49,11 +50,31 @@ enum FileFormat: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+struct CustomFileFormat: Codable, Identifiable, Hashable {
+    let id: UUID
+    var suffix: String
+    var isEnabled: Bool
+
+    init(id: UUID = UUID(), suffix: String, isEnabled: Bool = true) {
+        self.id = id
+        self.suffix = suffix
+        self.isEnabled = isEnabled
+    }
+
+    var menuTitle: String { "自定义文件 (.\(suffix))" }
+    var shortName: String { ".\(suffix)" }
+    var baseName: String { "新建 \(suffix.uppercased()) 文件" }
+}
+
 enum MenuFeature: String, Codable, CaseIterable, Identifiable {
     case newFile
     case terminal
+    case editor
     case copyPath
     case ai
+    case organize
+    case clipboard
+    case batchRename
 
     var id: String { rawValue }
 
@@ -61,8 +82,12 @@ enum MenuFeature: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .newFile: "新建文件"
         case .terminal: "在终端中打开"
+        case .editor: "用编辑器打开"
         case .copyPath: "复制路径"
         case .ai: "用 AI 打开"
+        case .organize: "复制或移动到常用目录"
+        case .clipboard: "从剪贴板创建文件"
+        case .batchRename: "批量重命名"
         }
     }
 }
@@ -81,6 +106,44 @@ enum TerminalApp: String, Codable, CaseIterable, Identifiable {
         case .terminal: "Terminal"
         }
     }
+
+    var bundleIdentifier: String {
+        switch self {
+        case .warp: "dev.warp.Warp"
+        case .iTerm: "com.googlecode.iterm2"
+        case .terminal: "com.apple.Terminal"
+        }
+    }
+}
+
+enum EditorApp: String, Codable, CaseIterable, Identifiable {
+    case visualStudioCode
+    case cursor
+    case zed
+    case xcode
+    case sublimeText
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .visualStudioCode: "Visual Studio Code"
+        case .cursor: "Cursor"
+        case .zed: "Zed"
+        case .xcode: "Xcode"
+        case .sublimeText: "Sublime Text"
+        }
+    }
+
+    var bundleIdentifier: String {
+        switch self {
+        case .visualStudioCode: "com.microsoft.VSCode"
+        case .cursor: "com.todesktop.230313mzl4w4u92"
+        case .zed: "dev.zed.Zed"
+        case .xcode: "com.apple.dt.Xcode"
+        case .sublimeText: "com.sublimetext.4"
+        }
+    }
 }
 
 enum PathCopyFormat: String, Codable, CaseIterable, Identifiable {
@@ -88,6 +151,9 @@ enum PathCopyFormat: String, Codable, CaseIterable, Identifiable {
     case relative
     case fileURL
     case terminal
+    case fileName
+    case baseName
+    case markdown
 
     var id: String { rawValue }
 
@@ -97,6 +163,23 @@ enum PathCopyFormat: String, Codable, CaseIterable, Identifiable {
         case .relative: "相对授权文件夹路径"
         case .fileURL: "file:// URL"
         case .terminal: "终端路径"
+        case .fileName: "文件名"
+        case .baseName: "不含扩展名的文件名"
+        case .markdown: "Markdown 链接"
+        }
+    }
+}
+
+enum NewFileNamingMode: String, Codable, CaseIterable, Identifiable {
+    case automatic
+    case askBeforeCreating
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .automatic: "使用默认名称并自动编号"
+        case .askBeforeCreating: "创建前输入名称"
         }
     }
 }
@@ -127,6 +210,56 @@ struct TemplateDirectoryRecord: Codable, Identifiable, Equatable {
     let path: String
     let bookmark: Data
     let templates: [TemplateRecord]
+
+    init(id: UUID, displayName: String, path: String, bookmark: Data, templates: [TemplateRecord] = []) {
+        self.id = id
+        self.displayName = displayName
+        self.path = path
+        self.bookmark = bookmark
+        self.templates = templates
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        displayName = try container.decode(String.self, forKey: .displayName)
+        path = try container.decode(String.self, forKey: .path)
+        bookmark = try container.decode(Data.self, forKey: .bookmark)
+        templates = try container.decodeIfPresent([TemplateRecord].self, forKey: .templates) ?? []
+    }
+}
+
+struct FavoriteFolderRecord: Codable, Identifiable, Equatable {
+    let id: UUID
+    let displayName: String
+    let path: String
+    let bookmark: Data
+}
+
+enum FileOperation: String, Codable {
+    case copy
+    case move
+}
+
+enum ClipboardFileType: String, Codable {
+    case txt
+    case markdown
+    case png
+}
+
+enum ActionRequestKind: String, Codable {
+    case fileOperation
+    case clipboardFile
+    case batchRename
+}
+
+struct ActionRequest: Codable {
+    let kind: ActionRequestKind
+    var paths: [String] = []
+    var destinationID: UUID?
+    var operation: FileOperation?
+    var destinationPath: String?
+    var clipboardType: ClipboardFileType?
 }
 
 enum SharedSettings {
@@ -135,11 +268,15 @@ enum SharedSettings {
     static let configurationDidChangeNotification = Notification.Name("com.keysuper.app.configuration-did-change")
     private static let foldersKey = "authorizedFolders"
     private static let enabledFormatsKey = "enabledFileFormats"
+    private static let customFormatsKey = "customFileFormats"
     private static let enabledFeaturesKey = "enabledMenuFeatures"
     private static let enabledTerminalAppsKey = "enabledTerminalApps"
+    private static let enabledEditorAppsKey = "enabledEditorApps"
     private static let enabledPathCopyFormatsKey = "enabledPathCopyFormats"
     private static let enabledAIToolsKey = "enabledAITools"
     private static let templateDirectoriesKey = "templateDirectories"
+    private static let favoriteFoldersKey = "favoriteFolders"
+    private static let newFileNamingModeKey = "newFileNamingMode"
 
     struct FolderRecord: Codable, Identifiable, Equatable {
         let id: UUID
@@ -152,11 +289,15 @@ enum SharedSettings {
     private struct DebugConfiguration: Codable {
         var folders: [FolderRecord] = []
         var enabledFormatRawValues: [String]?
+        var customFormats: [CustomFileFormat]?
         var enabledFeatureRawValues: [String]?
         var enabledTerminalAppRawValues: [String]?
+        var enabledEditorAppRawValues: [String]?
         var enabledPathCopyFormatRawValues: [String]?
         var enabledAIToolRawValues: [String]?
+        var newFileNamingModeRawValue: String?
         var templateDirectories: [TemplateDirectoryRecord] = []
+        var favoriteFolders: [FavoriteFolderRecord]?
     }
 
     private static var debugConfigurationURL: URL {
@@ -267,6 +408,33 @@ enum SharedSettings {
         notifyConfigurationChanged()
     }
 
+    static func loadCustomFileFormats() -> [CustomFileFormat] {
+#if DEBUG
+        return loadDebugConfiguration().customFormats ?? []
+#else
+        guard let defaults = UserDefaults(suiteName: appGroupIdentifier),
+              let data = defaults.data(forKey: customFormatsKey),
+              let formats = try? JSONDecoder().decode([CustomFileFormat].self, from: data) else {
+            return []
+        }
+        return formats
+#endif
+    }
+
+    static func saveCustomFileFormats(_ formats: [CustomFileFormat]) throws {
+#if DEBUG
+        var configuration = loadDebugConfiguration()
+        configuration.customFormats = formats
+        try saveDebugConfiguration(configuration)
+#else
+        guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        defaults.set(try JSONEncoder().encode(formats), forKey: customFormatsKey)
+#endif
+        notifyConfigurationChanged()
+    }
+
     static func loadEnabledFeatures() -> [MenuFeature] {
 #if DEBUG
         let rawValues = loadDebugConfiguration().enabledFeatureRawValues
@@ -309,6 +477,29 @@ enum SharedSettings {
 #else
         guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { throw CocoaError(.fileWriteUnknown) }
         defaults.set(apps.map(\.rawValue), forKey: enabledTerminalAppsKey)
+#endif
+        notifyConfigurationChanged()
+    }
+
+    static func loadEnabledEditorApps() -> [EditorApp] {
+#if DEBUG
+        let rawValues = loadDebugConfiguration().enabledEditorAppRawValues
+#else
+        let rawValues = UserDefaults(suiteName: appGroupIdentifier)?.stringArray(forKey: enabledEditorAppsKey)
+#endif
+        guard let rawValues else { return EditorApp.allCases }
+        let enabled = Set(rawValues.compactMap(EditorApp.init(rawValue:)))
+        return EditorApp.allCases.filter(enabled.contains)
+    }
+
+    static func saveEnabledEditorApps(_ apps: [EditorApp]) throws {
+#if DEBUG
+        var configuration = loadDebugConfiguration()
+        configuration.enabledEditorAppRawValues = apps.map(\.rawValue)
+        try saveDebugConfiguration(configuration)
+#else
+        guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { throw CocoaError(.fileWriteUnknown) }
+        defaults.set(apps.map(\.rawValue), forKey: enabledEditorAppsKey)
 #endif
         notifyConfigurationChanged()
     }
@@ -359,6 +550,27 @@ enum SharedSettings {
         notifyConfigurationChanged()
     }
 
+    static func loadNewFileNamingMode() -> NewFileNamingMode {
+#if DEBUG
+        let rawValue = loadDebugConfiguration().newFileNamingModeRawValue
+#else
+        let rawValue = UserDefaults(suiteName: appGroupIdentifier)?.string(forKey: newFileNamingModeKey)
+#endif
+        return rawValue.flatMap(NewFileNamingMode.init(rawValue:)) ?? .automatic
+    }
+
+    static func saveNewFileNamingMode(_ mode: NewFileNamingMode) throws {
+#if DEBUG
+        var configuration = loadDebugConfiguration()
+        configuration.newFileNamingModeRawValue = mode.rawValue
+        try saveDebugConfiguration(configuration)
+#else
+        guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { throw CocoaError(.fileWriteUnknown) }
+        defaults.set(mode.rawValue, forKey: newFileNamingModeKey)
+#endif
+        notifyConfigurationChanged()
+    }
+
     static func loadTemplateDirectories() -> [TemplateDirectoryRecord] {
 #if DEBUG
         return loadDebugConfiguration().templateDirectories
@@ -388,5 +600,58 @@ enum SharedSettings {
         loadTemplateDirectories().flatMap { directory in
             directory.templates.map { (directory, $0) }
         }
+    }
+
+    static func loadFavoriteFolders() -> [FavoriteFolderRecord] {
+#if DEBUG
+        return loadDebugConfiguration().favoriteFolders ?? []
+#else
+        guard let defaults = UserDefaults(suiteName: appGroupIdentifier),
+              let data = defaults.data(forKey: favoriteFoldersKey),
+              let folders = try? JSONDecoder().decode([FavoriteFolderRecord].self, from: data) else {
+            return []
+        }
+        return folders
+#endif
+    }
+
+    static func saveFavoriteFolders(_ folders: [FavoriteFolderRecord]) throws {
+#if DEBUG
+        var configuration = loadDebugConfiguration()
+        configuration.favoriteFolders = folders
+        try saveDebugConfiguration(configuration)
+#else
+        guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { throw CocoaError(.fileWriteUnknown) }
+        defaults.set(try JSONEncoder().encode(folders), forKey: favoriteFoldersKey)
+#endif
+        notifyConfigurationChanged()
+    }
+
+    static func saveRequest(_ request: ActionRequest) throws -> UUID {
+        let id = UUID()
+        let directory = requestDirectoryURL
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let data = try JSONEncoder().encode(request)
+        try data.write(to: directory.appendingPathComponent("\(id.uuidString).json"), options: .atomic)
+        return id
+    }
+
+    static func takeRequest(id: UUID) -> ActionRequest? {
+        let url = requestDirectoryURL.appendingPathComponent("\(id.uuidString).json")
+        guard let data = try? Data(contentsOf: url),
+              let request = try? JSONDecoder().decode(ActionRequest.self, from: data) else {
+            return nil
+        }
+        try? FileManager.default.removeItem(at: url)
+        return request
+    }
+
+    private static var requestDirectoryURL: URL {
+#if DEBUG
+        return debugConfigurationURL.deletingLastPathComponent().appendingPathComponent("Requests", isDirectory: true)
+#else
+        return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)!
+            .appendingPathComponent("Requests", isDirectory: true)
+#endif
     }
 }

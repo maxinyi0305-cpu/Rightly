@@ -16,6 +16,7 @@ struct KeySuperApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let logger = Logger(subsystem: "com.keysuper.app", category: "MainApp")
     private var receivedFileRequest = false
+    private var directLaunchWorkItem: DispatchWorkItem?
     private var settingsWindow: NSWindow?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -25,15 +26,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         logger.notice("A01 main app finished launching")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
-            guard let self, !self.receivedFileRequest else { return }
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self, !self.receivedFileRequest else {
+                self?.logger.notice("A04 background URL request detected; settings window suppressed")
+                return
+            }
             self.logger.notice("A04 direct launch detected; opening settings")
             self.showSettingsWindow()
         }
+        directLaunchWorkItem = workItem
+        // URL-open events can arrive just after launch. Give the event time to
+        // mark this as a background request before presenting the settings UI.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem)
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
         receivedFileRequest = true
+        directLaunchWorkItem?.cancel()
+        directLaunchWorkItem = nil
         logger.notice("A02 application open URLs called, count=\(urls.count, privacy: .public)")
         Task { @MainActor in
             urls.forEach {
@@ -77,8 +87,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let window = NSWindow(contentViewController: hostingController)
         window.title = "KEY SUPER 设置"
         window.styleMask = [.titled, .closable, .miniaturizable]
-        window.setContentSize(NSSize(width: 500, height: 800))
-        window.minSize = NSSize(width: 500, height: 620)
+        window.setContentSize(NSSize(width: 540, height: 820))
+        window.minSize = NSSize(width: 540, height: 640)
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.center()
