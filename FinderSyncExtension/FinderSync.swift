@@ -5,7 +5,12 @@ import OSLog
 final class FinderSync: FIFinderSync {
     private let logger = Logger(subsystem: "com.keysuper.app", category: "FinderExtension")
     private var contextualDirectory: URL?
+    private var contextualItem: URL?
     private var contextualFormats: [FileFormat] = []
+    private var contextualTemplates: [(directory: TemplateDirectoryRecord, template: TemplateRecord)] = []
+    private var contextualTerminalApps: [TerminalApp] = []
+    private var contextualPathCopyFormats: [PathCopyFormat] = []
+    private var contextualAITools: [AITool] = []
 
     override init() {
         super.init()
@@ -47,17 +52,41 @@ final class FinderSync: FIFinderSync {
         }
         logger.notice("E05 menu destination=\(destination.path, privacy: .public)")
         contextualDirectory = destination
+        contextualItem = selectedItemURL(for: menuKind)
         contextualFormats = SharedSettings.loadEnabledFormats()
+        contextualTemplates = SharedSettings.allTemplates()
+        contextualTerminalApps = SharedSettings.loadEnabledTerminalApps()
+        contextualPathCopyFormats = SharedSettings.loadEnabledPathCopyFormats()
+        contextualAITools = SharedSettings.loadEnabledAITools()
+        let enabledFeatures = Set(SharedSettings.loadEnabledFeatures())
 
         let menu = NSMenu(title: "KEY SUPER")
-        if !contextualFormats.isEmpty {
+        if enabledFeatures.contains(.newFile), !contextualFormats.isEmpty || !contextualTemplates.isEmpty {
             let parentItem = NSMenuItem(title: "新建文件", action: nil, keyEquivalent: "")
             let submenu = NSMenu(title: "新建文件")
-            for (index, type) in contextualFormats.enumerated() {
-                let item = NSMenuItem(title: type.menuTitle, action: #selector(createFile(_:)), keyEquivalent: "")
-                item.target = self
-                item.tag = index
-                submenu.addItem(item)
+            if !contextualFormats.isEmpty {
+                let emptyFilesItem = NSMenuItem(title: "空文件", action: nil, keyEquivalent: "")
+                let emptyFilesMenu = NSMenu(title: "空文件")
+                for (index, type) in contextualFormats.enumerated() {
+                    let item = NSMenuItem(title: type.menuTitle, action: #selector(createFile(_:)), keyEquivalent: "")
+                    item.target = self
+                    item.tag = index
+                    emptyFilesMenu.addItem(item)
+                }
+                emptyFilesItem.submenu = emptyFilesMenu
+                submenu.addItem(emptyFilesItem)
+            }
+            if !contextualTemplates.isEmpty {
+                let templatesItem = NSMenuItem(title: "模板", action: nil, keyEquivalent: "")
+                let templatesMenu = NSMenu(title: "模板")
+                for (index, template) in contextualTemplates.enumerated() {
+                    let item = NSMenuItem(title: template.template.displayName, action: #selector(createTemplate(_:)), keyEquivalent: "")
+                    item.target = self
+                    item.tag = index
+                    templatesMenu.addItem(item)
+                }
+                templatesItem.submenu = templatesMenu
+                submenu.addItem(templatesItem)
             }
             parentItem.submenu = submenu
             menu.addItem(parentItem)
@@ -65,18 +94,46 @@ final class FinderSync: FIFinderSync {
             logger.notice("E23 new-file menu hidden: no enabled formats")
         }
 
-        let aiParentItem = NSMenuItem(title: "用 AI 打开", action: nil, keyEquivalent: "")
-        let aiSubmenu = NSMenu(title: "用 AI 打开")
-        let claudeItem = NSMenuItem(title: "Claude Code", action: #selector(openClaudeCode(_:)), keyEquivalent: "")
-        claudeItem.target = self
-        aiSubmenu.addItem(claudeItem)
-        let codexItem = NSMenuItem(title: "Codex", action: #selector(openCodex(_:)), keyEquivalent: "")
-        codexItem.target = self
-        aiSubmenu.addItem(codexItem)
-        aiParentItem.submenu = aiSubmenu
-        menu.addItem(aiParentItem)
+        if enabledFeatures.contains(.terminal), !contextualTerminalApps.isEmpty {
+            let parentItem = NSMenuItem(title: "在终端中打开", action: nil, keyEquivalent: "")
+            let submenu = NSMenu(title: "在终端中打开")
+            for (index, app) in contextualTerminalApps.enumerated() {
+                let item = NSMenuItem(title: app.title, action: #selector(openTerminal(_:)), keyEquivalent: "")
+                item.target = self
+                item.tag = index
+                submenu.addItem(item)
+            }
+            parentItem.submenu = submenu
+            menu.addItem(parentItem)
+        }
 
-        logger.notice("E06 menu returned with \(self.contextualFormats.count, privacy: .public) file formats and \(aiSubmenu.items.count, privacy: .public) AI tools")
+        if enabledFeatures.contains(.copyPath), !contextualPathCopyFormats.isEmpty {
+            let parentItem = NSMenuItem(title: "复制路径", action: nil, keyEquivalent: "")
+            let submenu = NSMenu(title: "复制路径")
+            for (index, format) in contextualPathCopyFormats.enumerated() {
+                let item = NSMenuItem(title: format.title, action: #selector(copyPath(_:)), keyEquivalent: "")
+                item.target = self
+                item.tag = index
+                submenu.addItem(item)
+            }
+            parentItem.submenu = submenu
+            menu.addItem(parentItem)
+        }
+
+        if enabledFeatures.contains(.ai), !contextualAITools.isEmpty {
+            let aiParentItem = NSMenuItem(title: "用 AI 打开", action: nil, keyEquivalent: "")
+            let aiSubmenu = NSMenu(title: "用 AI 打开")
+            for (index, tool) in contextualAITools.enumerated() {
+                let item = NSMenuItem(title: tool.title, action: #selector(openAI(_:)), keyEquivalent: "")
+                item.target = self
+                item.tag = index
+                aiSubmenu.addItem(item)
+            }
+            aiParentItem.submenu = aiSubmenu
+            menu.addItem(aiParentItem)
+        }
+
+        logger.notice("E06 menu returned: formats=\(self.contextualFormats.count, privacy: .public), terminals=\(self.contextualTerminalApps.count, privacy: .public), copies=\(self.contextualPathCopyFormats.count, privacy: .public), AI=\(self.contextualAITools.count, privacy: .public)")
         return menu
     }
 
@@ -110,11 +167,43 @@ final class FinderSync: FIFinderSync {
         logger.notice("E13 NSWorkspace.open result=\(didOpen, privacy: .public)")
     }
 
-    @objc private func openClaudeCode(_ sender: NSMenuItem) {
-        guard let directory = contextualDirectory else {
-            logger.error("E24 Claude Code aborted: contextual directory missing")
+    @objc private func createTemplate(_ sender: NSMenuItem) {
+        guard let directory = contextualDirectory, contextualTemplates.indices.contains(sender.tag) else {
+            logger.error("E34 template action aborted")
             return
         }
+        let item = contextualTemplates[sender.tag]
+        var components = URLComponents()
+        components.scheme = "key-super"
+        components.host = "template"
+        components.queryItems = [
+            URLQueryItem(name: "path", value: directory.path),
+            URLQueryItem(name: "directoryID", value: item.directory.id.uuidString),
+            URLQueryItem(name: "templateID", value: item.template.id.uuidString)
+        ]
+        guard let requestURL = components.url else { return }
+        logger.notice("E35 opening template request=\(item.template.displayName, privacy: .public), destination=\(directory.path, privacy: .public)")
+        logger.notice("E36 template request result=\(NSWorkspace.shared.open(requestURL), privacy: .public)")
+    }
+
+    @objc private func openAI(_ sender: NSMenuItem) {
+        guard let directory = contextualDirectory else {
+            logger.error("E24 AI open aborted: contextual directory missing")
+            return
+        }
+        guard contextualAITools.indices.contains(sender.tag) else {
+            logger.error("E25 AI open aborted: invalid tag=\(sender.tag, privacy: .public)")
+            return
+        }
+        switch contextualAITools[sender.tag] {
+        case .claudeCode:
+            openClaudeCode(in: directory)
+        case .codex:
+            openCodex(in: directory)
+        }
+    }
+
+    private func openClaudeCode(in directory: URL) {
         var components = URLComponents()
         components.scheme = "claude"
         components.host = "code"
@@ -123,11 +212,7 @@ final class FinderSync: FIFinderSync {
         openAI(components.url, name: "Claude Code", directory: directory)
     }
 
-    @objc private func openCodex(_ sender: NSMenuItem) {
-        guard let directory = contextualDirectory else {
-            logger.error("E25 Codex aborted: contextual directory missing")
-            return
-        }
+    private func openCodex(in directory: URL) {
         var components = URLComponents()
         components.scheme = "codex"
         components.host = "new"
@@ -143,6 +228,70 @@ final class FinderSync: FIFinderSync {
         logger.notice("E27 opening \(name, privacy: .public), directory=\(directory.path, privacy: .public), URL=\(url.absoluteString, privacy: .public)")
         let didOpen = NSWorkspace.shared.open(url)
         logger.notice("E28 \(name, privacy: .public) open result=\(didOpen, privacy: .public)")
+    }
+
+    @objc private func openTerminal(_ sender: NSMenuItem) {
+        guard let directory = contextualDirectory, contextualTerminalApps.indices.contains(sender.tag) else {
+            logger.error("E29 terminal action aborted")
+            return
+        }
+        let app = contextualTerminalApps[sender.tag]
+        var components = URLComponents()
+        components.scheme = "key-super"
+        components.host = "terminal"
+        components.queryItems = [
+            URLQueryItem(name: "path", value: directory.path),
+            URLQueryItem(name: "app", value: app.rawValue)
+        ]
+        guard let requestURL = components.url else { return }
+        logger.notice("E30 opening terminal request app=\(app.rawValue, privacy: .public), path=\(directory.path, privacy: .public)")
+        logger.notice("E31 terminal request result=\(NSWorkspace.shared.open(requestURL), privacy: .public)")
+    }
+
+    @objc private func copyPath(_ sender: NSMenuItem) {
+        guard let item = contextualItem, contextualPathCopyFormats.indices.contains(sender.tag) else {
+            logger.error("E32 copy action aborted")
+            return
+        }
+        let format = contextualPathCopyFormats[sender.tag]
+        let value: String
+        switch format {
+        case .absolute:
+            value = item.path
+        case .fileURL:
+            value = item.absoluteString
+        case .terminal:
+            value = shellEscaped(item.path)
+        case .relative:
+            value = relativePath(for: item)
+        }
+        NSPasteboard.general.clearContents()
+        let didCopy = NSPasteboard.general.setString(value, forType: .string)
+        logger.notice("E33 copied \(format.rawValue, privacy: .public), success=\(didCopy, privacy: .public), value=\(value, privacy: .public)")
+    }
+
+    private func relativePath(for item: URL) -> String {
+        let itemPath = item.standardizedFileURL.path
+        let root = SharedSettings.loadFolders()
+            .map { URL(fileURLWithPath: $0.path, isDirectory: true).standardizedFileURL.path }
+            .filter { itemPath == $0 || itemPath.hasPrefix($0 + "/") }
+            .max { $0.count < $1.count }
+        guard let root else { return item.lastPathComponent }
+        let relative = String(itemPath.dropFirst(root.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return relative.isEmpty ? "." : relative
+    }
+
+    private func shellEscaped(_ path: String) -> String {
+        "'\(path.replacingOccurrences(of: "'", with: "'\\\\''"))'"
+    }
+
+    private func selectedItemURL(for menuKind: FIMenuKind) -> URL? {
+        switch menuKind {
+        case .contextualMenuForContainer, .contextualMenuForItems:
+            return FIFinderSyncController.default().selectedItemURLs()?.first?.standardizedFileURL
+        default:
+            return nil
+        }
     }
 
     private func destinationDirectory(for menuKind: FIMenuKind) -> URL? {
