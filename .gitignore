@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+
+# Build output
+DerivedData/
+build/
+*.xcarchive
+*.dSYM
+
+# Signing and distribution artifacts
+*.cer
+*.p12
+*.mobileprovision
+*.provisionprofile
+*.pkg
+*.ipa
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Local diagnostics
+*.log
+*.trace
