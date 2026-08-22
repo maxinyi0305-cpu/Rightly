@@ -17,6 +17,7 @@
 		A00000000000000000000008 /* SharedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000019 /* SharedSettings.swift */; };
 		A00000000000000000000009 /* Templates/BlankWorkbook.xlsx in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000023 /* Templates/BlankWorkbook.xlsx */; };
 		A0000000000000000000000A /* Templates/BlankDocument.docx in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000024 /* Templates/BlankDocument.docx */; };
+		A0000000000000000000000B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000027 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 		A00000000000000000000024 /* Templates/BlankDocument.docx */ = {isa = PBXFileReference; lastKnownFileType = file; path = Templates/BlankDocument.docx; sourceTree = "<group>"; };
 		A00000000000000000000025 /* KEY_SUPER.Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KEY_SUPER.Debug.entitlements; sourceTree = "<group>"; };
 		A00000000000000000000026 /* FinderSyncExtension.Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FinderSyncExtension.Debug.entitlements; sourceTree = "<group>"; };
+		A00000000000000000000027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +101,7 @@
 				A00000000000000000000018 /* FolderAccessStore.swift */,
 				A00000000000000000000023 /* Templates/BlankWorkbook.xlsx */,
 				A00000000000000000000024 /* Templates/BlankDocument.docx */,
+				A00000000000000000000027 /* Assets.xcassets */,
 				A00000000000000000000014 /* Info.plist */,
 				A00000000000000000000015 /* KEY_SUPER.entitlements */,
 				A00000000000000000000025 /* KEY_SUPER.Debug.entitlements */,
@@ -233,6 +236,7 @@
 			files = (
 				A00000000000000000000009 /* Templates/BlankWorkbook.xlsx in Resources */,
 				A0000000000000000000000A /* Templates/BlankDocument.docx in Resources */,
+				A0000000000000000000000B /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -303,7 +307,7 @@
 		A00000000000000000000110 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = KEY_SUPER/KEY_SUPER.Debug.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
@@ -327,7 +331,7 @@
 		A00000000000000000000111 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = KEY_SUPER/KEY_SUPER.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";

@@ -28,110 +28,81 @@ private enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         }
     }
 
+    var toolbarTitle: String {
+        switch self {
+        case .authorization: "授权"
+        case .menu: "菜单"
+        case .newFile: "新建"
+        case .editor: "编辑器"
+        case .terminal: "终端"
+        case .ai: "AI"
+        case .copyPath: "路径"
+        case .organize: "整理"
+        }
+    }
+
     var icon: String {
         switch self {
-        case .menu: "cursorarrow.click.2"
+        case .menu: "list.bullet.circle"
         case .newFile: "doc.badge.plus"
         case .editor: "chevron.left.forwardslash.chevron.right"
         case .terminal: "terminal"
         case .ai: "sparkles"
-        case .copyPath: "doc.on.clipboard"
+        case .copyPath: "doc.on.doc"
         case .organize: "folder.badge.gearshape"
         case .authorization: "lock.shield"
         }
     }
 }
 
-private struct SectionPositionPreferenceKey: PreferenceKey {
-    static var defaultValue: [String: CGFloat] = [:]
+private struct PreferenceGroupBoxStyle: GroupBoxStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            configuration.label
+                .font(.system(size: 15, weight: .semibold))
 
-    static func reduce(value: inout [String: CGFloat], nextValue: () -> [String: CGFloat]) {
-        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
-    }
-}
-
-private struct ScrollContentFramePreferenceKey: PreferenceKey {
-    static var defaultValue: CGRect = .zero
-
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
-    }
-}
-
-private struct ScrollViewportFramePreferenceKey: PreferenceKey {
-    static var defaultValue: CGRect = .zero
-
-    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
-        value = nextValue()
-    }
-}
-
-private struct LastSectionBottomPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+            configuration.content
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .background(Color(nsColor: .controlBackgroundColor).opacity(0.72))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color(nsColor: .separatorColor).opacity(0.55), lineWidth: 0.7)
+                }
+        }
     }
 }
 
 struct ContentView: View {
     @StateObject private var folderStore = FolderAccessStore()
     @State private var selectedSection: SettingsSection = .authorization
+    @State private var hoveredSection: SettingsSection?
     @State private var isFinderExtensionEnabled = FIFinderSyncController.isExtensionEnabled
     @State private var customFormatSuffix = ""
-    @State private var rightDetailsContentFrame: CGRect = .zero
-    @State private var rightDetailsViewportFrame: CGRect = .zero
-    @State private var rightDetailsViewportHeight: CGFloat = 0
-    @State private var lastSectionBottom: CGFloat = 0
     private let logger = Logger(subsystem: "com.keysuper.app", category: "SettingsUI")
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            header
+        VStack(spacing: 0) {
+            settingsToolbar
+
             Divider()
-            ScrollViewReader { proxy in
-                HStack(alignment: .top, spacing: 0) {
-                    sidebar { section in
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedSection = section
-                            proxy.scrollTo(section, anchor: .top)
-                        }
-                    }
-                    Divider()
-                    ScrollView(.vertical, showsIndicators: true) {
-                        details
-                    }
-                    .coordinateSpace(name: "rightDetailsScroll")
-                    .overlay {
-                        GeometryReader { geometry in
-                            Color.clear.preference(
-                                key: ScrollViewportFramePreferenceKey.self,
-                                value: geometry.frame(in: .global)
-                            )
-                        }
-                    }
-                    .onPreferenceChange(ScrollViewportFramePreferenceKey.self) { frame in
-                        rightDetailsViewportFrame = frame
-                        rightDetailsViewportHeight = frame.height
-                        updateSelectedSection(from: [:])
-                    }
-                    .onPreferenceChange(SectionPositionPreferenceKey.self) { positions in
-                        updateSelectedSection(from: positions)
-                    }
-                    .onPreferenceChange(ScrollContentFramePreferenceKey.self) { frame in
-                        rightDetailsContentFrame = frame
-                        updateSelectedSection(from: [:])
-                    }
-                    .onPreferenceChange(LastSectionBottomPreferenceKey.self) { bottom in
-                        lastSectionBottom = bottom
-                        updateSelectedSection(from: [:])
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+            ScrollView(.vertical, showsIndicators: true) {
+                detailSection(selectedSection)
+                    .frame(maxWidth: 620, alignment: .topLeading)
+                    .padding(.horizontal, 40)
+                    .padding(.top, 34)
+                    .padding(.bottom, 44)
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .id(selectedSection)
             }
+            .background(Color(nsColor: .windowBackgroundColor))
         }
-        .frame(minWidth: 800, idealWidth: 860, minHeight: 560, idealHeight: 660)
+        .groupBoxStyle(PreferenceGroupBoxStyle())
+        .frame(minWidth: 820, idealWidth: 900, minHeight: 590, idealHeight: 720)
         .background(Color(nsColor: .windowBackgroundColor))
+        .ignoresSafeArea(.container, edges: .top)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshExtensionStatus()
         }
@@ -140,137 +111,81 @@ struct ContentView: View {
         }
     }
 
-    private var header: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "cursorarrow.click.2")
-                .font(.system(size: 28, weight: .medium))
-                .foregroundStyle(.tint)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text("KEY SUPER")
-                    .font(.title2.weight(.semibold))
-                Text("让文件在当前位置立即进入下一步工作")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Button {
-                showExtensionManagement()
-            } label: {
-                HStack(spacing: 7) {
-                    Circle()
-                        .fill(isFinderExtensionEnabled ? Color.green : Color.red)
-                        .frame(width: 8, height: 8)
-                    Text(isFinderExtensionEnabled ? "功能已启用 · 点击管理" : "功能未启用 · 点击启用")
-                        .font(.callout.weight(.medium))
-                }
-                .foregroundStyle(isFinderExtensionEnabled ? Color.green : Color.red)
-                .padding(.horizontal, 11)
-                .padding(.vertical, 7)
-                .background((isFinderExtensionEnabled ? Color.green : Color.red).opacity(0.1))
-                .clipShape(Capsule())
-                .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
-            .help(isFinderExtensionEnabled ? "点击打开系统设置并关闭 Finder 扩展" : "点击打开系统设置并启用 Finder 扩展")
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 18)
-    }
-
-    private func sidebar(scrollTo: @escaping (SettingsSection) -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            ForEach(SettingsSection.allCases) { section in
-                Button {
-                    scrollTo(section)
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: section.icon)
-                            .frame(width: 18)
-                        Text(section.title)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(selectedSection == section ? Color.accentColor : .primary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(selectedSection == section ? Color.accentColor.opacity(0.13) : .clear)
-                    .clipShape(RoundedRectangle(cornerRadius: 7))
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            Spacer(minLength: 12)
-
-            Text("状态")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
+    private var settingsToolbar: some View {
+        ZStack(alignment: .top) {
+            Text("设置")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.primary)
+                .padding(.top, 14)
 
             HStack(spacing: 7) {
-                Circle()
-                    .fill(folderStore.folders.isEmpty ? Color.orange : Color.green)
-                    .frame(width: 7, height: 7)
-                Text(folderStore.folders.isEmpty ? "尚未授权文件夹" : "已授权 \(folderStore.folders.count) 个文件夹")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 12)
-        }
-        .frame(width: 230, alignment: .topLeading)
-        .padding(16)
-    }
-
-    @ViewBuilder
-    private var details: some View {
-        VStack(alignment: .leading, spacing: 30) {
-            ForEach(SettingsSection.allCases) { section in
-                detailSection(section)
-                    .id(section)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .background {
-                        GeometryReader { geometry in
-                            Color.clear.preference(
-                                key: SectionPositionPreferenceKey.self,
-                                value: [section.rawValue: geometry.frame(in: .named("rightDetailsScroll")).minY]
-                            )
+                ForEach(SettingsSection.allCases) { section in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.16)) {
+                            selectedSection = section
                         }
-                    }
-                    .background {
-                        if section == .organize {
-                            GeometryReader { geometry in
-                                Color.clear.preference(
-                                    key: LastSectionBottomPreferenceKey.self,
-                                    value: geometry.frame(in: .named("rightDetailsScroll")).maxY
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: section.icon)
+                                .font(.system(size: 25, weight: .regular))
+                                .frame(width: 30, height: 29)
+
+                            Text(section.toolbarTitle)
+                                .font(.system(size: 13, weight: .medium))
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(selectedSection == section ? Color.accentColor : Color.secondary)
+                        .frame(width: 62, height: 66)
+                        .background {
+                            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                .fill(
+                                    selectedSection == section
+                                        ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.1)
+                                        : hoveredSection == section
+                                            ? Color(nsColor: .separatorColor).opacity(0.12)
+                                            : .clear
                                 )
-                            }
                         }
+                        .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                     }
-
-                if section != .organize {
-                    Divider()
+                    .buttonStyle(.plain)
+                    .onHover { isHovered in
+                        hoveredSection = isHovered ? section : nil
+                    }
                 }
             }
+            .padding(.top, 42)
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .padding(24)
-        // Reserve enough trailing space for the last section to reach the
-        // top of the viewport, so scroll-position highlighting can select it.
-        .padding(.bottom, max(rightDetailsViewportHeight * 0.5, 24))
-        .background {
-            GeometryReader { geometry in
-                Color.clear.preference(
-                    key: ScrollContentFramePreferenceKey.self,
-                    value: geometry.frame(in: .global)
-                )
-            }
-        }
+        .frame(height: 118)
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial)
     }
+
+    private func extensionStatusButton() -> some View {
+        Button {
+            showExtensionManagement()
+        } label: {
+            Text(isFinderExtensionEnabled ? "功能已启用 · 点击管理" : "功能未启用 · 点击启用")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(
+                    isFinderExtensionEnabled
+                        ? Color(red: 0.102, green: 0.557, blue: 0.239)
+                        : Color(red: 0.73, green: 0.102, blue: 0.102)
+                )
+                .padding(.horizontal, 13)
+                .padding(.vertical, 7)
+                .background(
+                    isFinderExtensionEnabled
+                        ? Color(red: 0.894, green: 0.973, blue: 0.922)
+                        : Color(red: 1, green: 0.91, blue: 0.9)
+                )
+                .clipShape(Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(isFinderExtensionEnabled ? "点击打开系统设置并关闭 Finder 扩展" : "点击打开系统设置并启用 Finder 扩展")
+    }
+
 
     @ViewBuilder
     private func detailSection(_ section: SettingsSection) -> some View {
@@ -295,25 +210,37 @@ struct ContentView: View {
     }
 
     private var menuDetail: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 24) {
             pageTitle("右键菜单", subtitle: "选择要显示在 Finder 中的功能。所有开关会实时同步到扩展。")
 
-            GroupBox {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(MenuFeature.allCases) { feature in
-                        Toggle(
-                            feature.title,
-                            isOn: Binding(
-                                get: { folderStore.isEnabled(feature) },
-                                set: { folderStore.setEnabled($0, for: feature) }
+            GroupBox("显示功能") {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(MenuFeature.allCases.enumerated()), id: \.element.id) { index, feature in
+                        HStack {
+                            Text(feature.title)
+                                .font(.system(size: 13))
+
+                            Spacer()
+
+                            Toggle(
+                                "",
+                                isOn: Binding(
+                                    get: { folderStore.isEnabled(feature) },
+                                    set: { folderStore.setEnabled($0, for: feature) }
+                                )
                             )
-                        )
-                        .toggleStyle(.checkbox)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .controlSize(.small)
+                        }
+                        .frame(minHeight: 42)
+
+                        if index < MenuFeature.allCases.count - 1 {
+                            Divider()
+                        }
                     }
                 }
-                .padding(.vertical, 3)
             }
-
         }
     }
 
@@ -444,15 +371,18 @@ struct ContentView: View {
     private var editorDetail: some View {
         VStack(alignment: .leading, spacing: 18) {
             pageTitle("编辑器", subtitle: "选择在 Finder 中打开文件或文件夹时显示的编辑器。")
-            GroupBox {
-                VStack(alignment: .leading, spacing: 9) {
-                    ForEach(EditorApp.allCases) { app in
+            GroupBox("可用编辑器") {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(EditorApp.allCases.enumerated()), id: \.element.id) { index, app in
                         appToggle(app.title, isOn: folderStore.isEnabled(app), installed: folderStore.isInstalled(bundleIdentifier: app.bundleIdentifier)) {
                             folderStore.setEnabled($0, for: app)
                         }
+
+                        if index < EditorApp.allCases.count - 1 {
+                            Divider()
+                        }
                     }
                 }
-                .padding(.vertical, 3)
             }
             Text("未安装的应用不会出现在 Finder 右键菜单中。")
                 .font(.caption)
@@ -463,15 +393,18 @@ struct ContentView: View {
     private var terminalDetail: some View {
         VStack(alignment: .leading, spacing: 18) {
             pageTitle("终端", subtitle: "在当前 Finder 文件夹中打开终端窗口。")
-            GroupBox {
-                VStack(alignment: .leading, spacing: 9) {
-                    ForEach(TerminalApp.allCases) { app in
+            GroupBox("可用终端") {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(TerminalApp.allCases.enumerated()), id: \.element.id) { index, app in
                         appToggle(app.title, isOn: folderStore.isEnabled(app), installed: folderStore.isInstalled(bundleIdentifier: app.bundleIdentifier)) {
                             folderStore.setEnabled($0, for: app)
                         }
+
+                        if index < TerminalApp.allCases.count - 1 {
+                            Divider()
+                        }
                     }
                 }
-                .padding(.vertical, 3)
             }
             Text("Terminal 需要在系统设置的“隐私与安全性 > 自动化”中允许 KEY SUPER 控制它。")
                 .font(.caption)
@@ -482,20 +415,33 @@ struct ContentView: View {
     private var aiDetail: some View {
         VStack(alignment: .leading, spacing: 18) {
             pageTitle("AI 工具", subtitle: "从 Finder 当前目录直接进入 AI 编程工作流。")
-            GroupBox {
-                VStack(alignment: .leading, spacing: 9) {
-                    ForEach(AITool.allCases) { tool in
-                        Toggle(
-                            tool.title,
-                            isOn: Binding(
-                                get: { folderStore.isEnabled(tool) },
-                                set: { folderStore.setEnabled($0, for: tool) }
+            GroupBox("可用工具") {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(AITool.allCases.enumerated()), id: \.element.id) { index, tool in
+                        HStack {
+                            Text(tool.title)
+                                .font(.system(size: 13))
+
+                            Spacer()
+
+                            Toggle(
+                                "",
+                                isOn: Binding(
+                                    get: { folderStore.isEnabled(tool) },
+                                    set: { folderStore.setEnabled($0, for: tool) }
+                                )
                             )
-                        )
-                        .toggleStyle(.checkbox)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .controlSize(.small)
+                        }
+                        .frame(minHeight: 42)
+
+                        if index < AITool.allCases.count - 1 {
+                            Divider()
+                        }
                     }
                 }
-                .padding(.vertical, 3)
             }
             Text("未注册对应 URL scheme 的 AI 工具会自动从 Finder 菜单中隐藏。")
                 .font(.caption)
@@ -506,7 +452,7 @@ struct ContentView: View {
     private var copyPathDetail: some View {
         VStack(alignment: .leading, spacing: 18) {
             pageTitle("路径复制", subtitle: "支持单选和多选项目，多个结果会按行复制。")
-            GroupBox {
+            GroupBox("复制格式") {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 9) {
                     ForEach(PathCopyFormat.allCases) { format in
                         Toggle(
@@ -584,9 +530,27 @@ struct ContentView: View {
     }
 
     private var authorizationDetail: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 24) {
             pageTitle("文件夹授权", subtitle: "KEY SUPER 只会在这些文件夹及其子文件夹中显示右键菜单。")
-            GroupBox {
+
+            GroupBox("Finder 扩展") {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Finder 右键扩展")
+                            .font(.system(size: 14, weight: .medium))
+                        Text(isFinderExtensionEnabled ? "扩展已启用，可以在授权目录中使用。" : "扩展尚未启用，Finder 菜单不会显示。")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    extensionStatusButton()
+                }
+                .frame(minHeight: 44)
+            }
+
+            GroupBox("文件夹访问") {
                 VStack(alignment: .leading, spacing: 9) {
                     if folderStore.folders.isEmpty {
                         Text("尚未授权文件夹。推荐授权个人主目录，以覆盖桌面、文稿和下载等常用位置。")
@@ -651,11 +615,11 @@ struct ContentView: View {
     }
 
     private func pageTitle(_ title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 7) {
             Text(title)
-                .font(.title2.weight(.semibold))
+                .font(.system(size: 20, weight: .semibold))
             Text(subtitle)
-                .font(.callout)
+                .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
     }
@@ -673,9 +637,11 @@ struct ContentView: View {
         setEnabled: @escaping (Bool) -> Void
     ) -> some View {
         HStack {
-            Toggle(title, isOn: Binding(get: { isOn }, set: setEnabled))
-                .toggleStyle(.checkbox)
+            Text(title)
+                .font(.system(size: 13))
+
             Spacer()
+
             if installed {
                 Text("已安装")
                     .font(.caption)
@@ -685,7 +651,13 @@ struct ContentView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            Toggle("", isOn: Binding(get: { isOn }, set: setEnabled))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
         }
+        .frame(minHeight: 42)
     }
 
     private func showExtensionManagement() {
@@ -714,36 +686,4 @@ struct ContentView: View {
         }
     }
 
-    private func updateSelectedSection(from positions: [String: CGFloat]) {
-        if rightDetailsViewportFrame != .zero,
-           rightDetailsContentFrame != .zero,
-           rightDetailsContentFrame.height > rightDetailsViewportFrame.height + 24,
-           rightDetailsContentFrame.maxY <= rightDetailsViewportFrame.maxY + 24,
-           let lastSection = SettingsSection.allCases.last,
-           selectedSection != lastSection {
-            selectedSection = lastSection
-            return
-        }
-
-        if rightDetailsViewportHeight > 0,
-           lastSectionBottom > 0,
-           rightDetailsContentFrame.height > rightDetailsViewportHeight + 24,
-           lastSectionBottom <= rightDetailsViewportHeight + 24,
-           let lastSection = SettingsSection.allCases.last,
-           selectedSection != lastSection {
-            selectedSection = lastSection
-            return
-        }
-
-        guard !positions.isEmpty else { return }
-        let threshold = max(36, rightDetailsViewportHeight * 0.42)
-        let visibleAtTop = positions
-            .filter { $0.value <= threshold }
-            .max { $0.value < $1.value }
-        let candidate = visibleAtTop ?? positions.min { $0.value < $1.value }
-        guard let candidate, let section = SettingsSection(rawValue: candidate.key) else { return }
-        if selectedSection != section {
-            selectedSection = section
-        }
-    }
 }

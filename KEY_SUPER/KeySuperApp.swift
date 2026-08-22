@@ -86,9 +86,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let hostingController = NSHostingController(rootView: ContentView())
         let window = NSWindow(contentViewController: hostingController)
         window.title = "KEY SUPER 设置"
-        window.styleMask = [.titled, .closable, .miniaturizable]
-        window.setContentSize(NSSize(width: 540, height: 820))
-        window.minSize = NSSize(width: 540, height: 640)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+        window.setContentSize(NSSize(width: 900, height: 720))
+        window.minSize = NSSize(width: 820, height: 590)
+        window.backgroundColor = .windowBackgroundColor
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.center()
