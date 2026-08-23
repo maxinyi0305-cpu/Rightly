@@ -229,17 +229,8 @@ enum FileCreator {
               let destinationPath = components.queryItems?.first(where: { $0.name == "path" })?.value,
               let directoryIDValue = components.queryItems?.first(where: { $0.name == "directoryID" })?.value,
               let directoryID = UUID(uuidString: directoryIDValue),
-              let relativePath = components.queryItems?.first(where: { $0.name == "relativePath" })?.value,
               let templateDirectory = SharedSettings.loadTemplateDirectories().first(where: { $0.id == directoryID }) else {
             logger.error("F23 template request parsing failed")
-            return
-        }
-
-        let normalizedRelativePath = relativePath.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let relativeComponents = normalizedRelativePath.split(separator: "/")
-        guard !normalizedRelativePath.isEmpty,
-              !relativeComponents.contains("..") else {
-            logger.error("F23 invalid template relative path")
             return
         }
 
@@ -268,16 +259,8 @@ enum FileCreator {
             if templateDidAccess { templateRoot.stopAccessingSecurityScopedResource() }
         }
 
-        let sourceURL = templateRoot.appendingPathComponent(normalizedRelativePath).standardizedFileURL
-        let templateRootPath = templateRoot.standardizedFileURL.path
-        guard sourceURL.path.hasPrefix(templateRootPath + "/") else {
-            logger.error("F26 template path escaped source directory")
-            return
-        }
-        let sourceValues = try? sourceURL.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
-        guard sourceValues?.isRegularFile == true, sourceValues?.isSymbolicLink != true else {
-            logger.error("F26 template source missing=\(sourceURL.path, privacy: .public)")
-            showError("模板文件不存在", detail: "请确认模板目录中的源文件仍然存在。")
+        guard let sourceURL = chooseTemplate(in: templateRoot) else {
+            (NSApp.delegate as? AppDelegate)?.finishBackgroundRequest()
             return
         }
         do {
@@ -299,6 +282,60 @@ enum FileCreator {
             logger.error("F28 template copy failed: \(error.localizedDescription, privacy: .public)")
             showError("无法创建模板文件", detail: error.localizedDescription)
         }
+    }
+
+    @MainActor
+    private static func chooseTemplate(in root: URL) -> URL? {
+        let keys: Set<URLResourceKey> = [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]
+        guard let enumerator = FileManager.default.enumerator(
+            at: root,
+            includingPropertiesForKeys: Array(keys),
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else {
+            showError("无法读取模板目录", detail: "请确认模板目录仍然可访问。")
+            return nil
+        }
+
+        let rootPath = root.standardizedFileURL.path
+        var candidates: [(name: String, url: URL, size: Int64)] = []
+        for case let fileURL as URL in enumerator {
+            guard candidates.count < 500,
+                  let values = try? fileURL.resourceValues(forKeys: keys),
+                  values.isRegularFile == true,
+                  values.isSymbolicLink != true else { continue }
+            let relativePath = String(fileURL.standardizedFileURL.path.dropFirst(rootPath.count))
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            guard !relativePath.isEmpty else { continue }
+            candidates.append((relativePath, fileURL.standardizedFileURL, Int64(values.fileSize ?? 0)))
+        }
+        candidates.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        guard !candidates.isEmpty else {
+            showError("模板目录为空", detail: "请先在模板目录中放入要创建的文件。")
+            return nil
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "选择模板文件"
+        alert.informativeText = "仅在你选择模板时读取目录；应用不会保存模板文件或模板列表。"
+        alert.addButton(withTitle: "创建")
+        alert.addButton(withTitle: "取消")
+        let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 380, height: 26), pullsDown: false)
+        popup.addItems(withTitles: candidates.map(\.name))
+        alert.accessoryView = popup
+        NSApp.activate(ignoringOtherApps: true)
+        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+
+        let selected = candidates[popup.indexOfSelectedItem]
+        if selected.size > 500 * 1024 * 1024 {
+            let sizeInMB = Int((selected.size + 1024 * 1024 - 1) / (1024 * 1024))
+            let confirm = NSAlert()
+            confirm.messageText = "模板文件较大"
+            confirm.informativeText = "\(selected.name) 约 \(sizeInMB) MB，复制可能需要较长时间。仍要创建吗？"
+            confirm.addButton(withTitle: "继续创建")
+            confirm.addButton(withTitle: "取消")
+            guard confirm.runModal() == .alertFirstButtonReturn else { return nil }
+        }
+        return selected.url
     }
 
     private static func availableTemplateURL(in directory: URL, sourceName: String) -> URL {

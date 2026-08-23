@@ -169,9 +169,9 @@ final class FolderAccessStore: ObservableObject {
 
     func chooseFolders() {
         let panel = NSOpenPanel()
-        panel.title = "选择允许 KEY SUPER 新建文件的文件夹"
-        panel.message = "推荐选择个人主目录，以覆盖桌面、文稿和下载等常用位置。"
-        panel.prompt = "授权此文件夹"
+        panel.title = "选择菜单显示范围"
+        panel.message = "KEY SUPER 仅在所选文件夹及其子文件夹中显示右键菜单。"
+        panel.prompt = "添加文件夹"
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = true
@@ -184,8 +184,8 @@ final class FolderAccessStore: ObservableObject {
     func chooseTemplateDirectory() {
         let panel = NSOpenPanel()
         panel.title = "选择模板目录"
-        panel.message = "目录中的文件会显示在 Finder 的“新建文件 > 模板”菜单中。"
-        panel.prompt = "使用此目录"
+        panel.message = "目录会作为 Finder“新建 > 模板文件”的入口；选择后再读取其中的文件。"
+        panel.prompt = "添加模板目录"
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -199,22 +199,18 @@ final class FolderAccessStore: ObservableObject {
                 includingResourceValuesForKeys: nil,
                 relativeTo: nil
             )
-            let didAccess = root.startAccessingSecurityScopedResource()
-            defer { if didAccess { root.stopAccessingSecurityScopedResource() } }
-            let templates = scanTemplates(in: root)
             let record = TemplateDirectoryRecord(
                 id: UUID(),
                 displayName: root.lastPathComponent.isEmpty ? root.path : root.lastPathComponent,
                 path: root.path,
-                bookmark: bookmark,
-                templates: templates
+                bookmark: bookmark
             )
             templateDirectories.removeAll { $0.path == root.path }
             templateDirectories.append(record)
             templateDirectories.sort { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
             try SharedSettings.saveTemplateDirectories(templateDirectories)
             errorMessage = nil
-            logger.notice("P12 added template directory=\(root.path, privacy: .public), templates=\(templates.count, privacy: .public)")
+            logger.notice("P12 added template directory=\(root.path, privacy: .public)")
         } catch {
             errorMessage = "无法保存模板目录：\(error.localizedDescription)"
             logger.error("P13 template directory save failed: \(error.localizedDescription, privacy: .public)")
@@ -225,7 +221,7 @@ final class FolderAccessStore: ObservableObject {
         let panel = NSOpenPanel()
         panel.title = "选择常用目录"
         panel.message = "这些目录会显示在 Finder 的“复制到”和“移动到”菜单中。"
-        panel.prompt = "添加常用目录"
+        panel.prompt = "添加目录"
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = true
@@ -274,35 +270,6 @@ final class FolderAccessStore: ObservableObject {
         } catch {
             errorMessage = "无法保存模板目录：\(error.localizedDescription)"
             logger.error("P15 template directory removal failed: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    func refreshTemplates() {
-        do {
-            templateDirectories = try templateDirectories.map { directory in
-                var isStale = false
-                let root = try URL(
-                    resolvingBookmarkData: directory.bookmark,
-                    options: [.withSecurityScope, .withoutUI],
-                    relativeTo: nil,
-                    bookmarkDataIsStale: &isStale
-                )
-                let didAccess = root.startAccessingSecurityScopedResource()
-                defer { if didAccess { root.stopAccessingSecurityScopedResource() } }
-                return TemplateDirectoryRecord(
-                    id: directory.id,
-                    displayName: directory.displayName,
-                    path: directory.path,
-                    bookmark: directory.bookmark,
-                    templates: scanTemplates(in: root)
-                )
-            }
-            try SharedSettings.saveTemplateDirectories(templateDirectories)
-            errorMessage = nil
-            logger.notice("P16 refreshed template addresses, directories=\(self.templateDirectories.count, privacy: .public)")
-        } catch {
-            errorMessage = "无法刷新模板地址：\(error.localizedDescription)"
-            logger.error("P17 template address refresh failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -359,27 +326,6 @@ final class FolderAccessStore: ObservableObject {
             errorMessage = "无法保存\(name)设置：\(error.localizedDescription)"
             logger.error("P09 \(name, privacy: .public) settings save failed: \(error.localizedDescription, privacy: .public)")
         }
-    }
-
-    private func scanTemplates(in root: URL) -> [TemplateRecord] {
-        let keys: Set<URLResourceKey> = [.isRegularFileKey, .isHiddenKey, .isSymbolicLinkKey]
-        guard let enumerator = FileManager.default.enumerator(
-            at: root,
-            includingPropertiesForKeys: Array(keys),
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else { return [] }
-
-        var templates: [TemplateRecord] = []
-        for case let fileURL as URL in enumerator {
-            guard let values = try? fileURL.resourceValues(forKeys: keys),
-                  values.isRegularFile == true,
-                  values.isSymbolicLink != true else { continue }
-            let relativePath = String(fileURL.standardizedFileURL.path.dropFirst(root.standardizedFileURL.path.count))
-                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-            guard !relativePath.isEmpty else { continue }
-            templates.append(.init(id: UUID(), displayName: relativePath, relativePath: relativePath))
-        }
-        return templates.sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
     }
 
 }

@@ -4,14 +4,10 @@ import OSLog
 import SwiftUI
 
 private enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
-    case authorization
     case menu
     case newFile
-    case editor
-    case terminal
-    case ai
-    case copyPath
-    case organize
+    case openMethod
+    case fileOperations
 
     var id: String { rawValue }
 
@@ -19,25 +15,17 @@ private enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .menu: "右键菜单"
         case .newFile: "新建文件"
-        case .editor: "编辑器"
-        case .terminal: "终端"
-        case .ai: "AI 工具"
-        case .copyPath: "路径复制"
-        case .organize: "文件整理"
-        case .authorization: "文件夹授权"
+        case .openMethod: "打开方式"
+        case .fileOperations: "文件操作"
         }
     }
 
     var toolbarTitle: String {
         switch self {
-        case .authorization: "授权"
-        case .menu: "菜单"
+        case .menu: "授权"
         case .newFile: "新建"
-        case .editor: "编辑器"
-        case .terminal: "终端"
-        case .ai: "AI"
-        case .copyPath: "路径"
-        case .organize: "整理"
+        case .openMethod: "打开方式"
+        case .fileOperations: "文件操作"
         }
     }
 
@@ -45,12 +33,8 @@ private enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .menu: "list.bullet.circle"
         case .newFile: "doc.badge.plus"
-        case .editor: "chevron.left.forwardslash.chevron.right"
-        case .terminal: "terminal"
-        case .ai: "sparkles"
-        case .copyPath: "doc.on.doc"
-        case .organize: "folder.badge.gearshape"
-        case .authorization: "lock.shield"
+        case .openMethod: "arrow.up.forward.app"
+        case .fileOperations: "folder.badge.gearshape"
         }
     }
 }
@@ -76,7 +60,7 @@ private struct PreferenceGroupBoxStyle: GroupBoxStyle {
 
 struct ContentView: View {
     @StateObject private var folderStore = FolderAccessStore()
-    @State private var selectedSection: SettingsSection = .authorization
+    @State private var selectedSection: SettingsSection = .menu
     @State private var hoveredSection: SettingsSection?
     @State private var isFinderExtensionEnabled = FIFinderSyncController.isExtensionEnabled
     @State private var customFormatSuffix = ""
@@ -112,11 +96,11 @@ struct ContentView: View {
     }
 
     private var settingsToolbar: some View {
-        ZStack(alignment: .top) {
+        VStack(spacing: 0) {
             Text("设置")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.primary)
-                .padding(.top, 14)
+                .frame(height: 32)
 
             HStack(spacing: 7) {
                 ForEach(SettingsSection.allCases) { section in
@@ -127,15 +111,15 @@ struct ContentView: View {
                     } label: {
                         VStack(spacing: 4) {
                             Image(systemName: section.icon)
-                                .font(.system(size: 25, weight: .regular))
+                                .font(.system(size: 20, weight: .regular))
                                 .frame(width: 30, height: 29)
 
                             Text(section.toolbarTitle)
-                                .font(.system(size: 13, weight: .medium))
+                                .font(.system(size: 12, weight: .medium))
                                 .lineLimit(1)
                         }
                         .foregroundStyle(selectedSection == section ? Color.accentColor : Color.secondary)
-                        .frame(width: 62, height: 66)
+                        .frame(width: 62, height: 58)
                         .background {
                             RoundedRectangle(cornerRadius: 11, style: .continuous)
                                 .fill(
@@ -154,9 +138,9 @@ struct ContentView: View {
                     }
                 }
             }
-            .padding(.top, 42)
+            .frame(height: 68)
         }
-        .frame(height: 118)
+        .frame(height: 100)
         .frame(maxWidth: .infinity)
         .background(.ultraThinMaterial)
     }
@@ -194,351 +178,23 @@ struct ContentView: View {
             menuDetail
         case .newFile:
             newFileDetail
-        case .editor:
-            editorDetail
-        case .terminal:
-            terminalDetail
-        case .ai:
-            aiDetail
-        case .copyPath:
-            copyPathDetail
-        case .organize:
-            organizeDetail
-        case .authorization:
-            authorizationDetail
+        case .openMethod:
+            openMethodDetail
+        case .fileOperations:
+            fileOperationsDetail
         }
     }
 
     private var menuDetail: some View {
         VStack(alignment: .leading, spacing: 24) {
-            pageTitle("右键菜单", subtitle: "选择要显示在 Finder 中的功能。所有开关会实时同步到扩展。")
-
-            GroupBox("显示功能") {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(MenuFeature.allCases.enumerated()), id: \.element.id) { index, feature in
-                        HStack {
-                            Text(feature.title)
-                                .font(.system(size: 13))
-
-                            Spacer()
-
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { folderStore.isEnabled(feature) },
-                                    set: { folderStore.setEnabled($0, for: feature) }
-                                )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                            .controlSize(.small)
-                        }
-                        .frame(minHeight: 42)
-
-                        if index < MenuFeature.allCases.count - 1 {
-                            Divider()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var newFileDetail: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            pageTitle("新建文件", subtitle: "在当前 Finder 目录中直接创建空文件或模板。")
-
-            GroupBox("空文件格式") {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 9) {
-                    ForEach(FileFormat.allCases) { format in
-                        Toggle(
-                            format.shortName,
-                            isOn: Binding(
-                                get: { folderStore.isEnabled(format) },
-                                set: { folderStore.setEnabled($0, for: format) }
-                            )
-                        )
-                        .toggleStyle(.checkbox)
-                    }
-                }
-                .padding(.vertical, 3)
-
-                if folderStore.enabledFormats.isEmpty {
-                    Text("至少启用一种格式，Finder 中才会显示“空文件”菜单。")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                        .padding(.top, 8)
-                }
-            }
-
-            GroupBox("自定义后缀格式") {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("添加 .log、.yaml、.conf 等自定义文件后缀，保存后会出现在 Finder 的“新建文件”菜单中。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    if !folderStore.customFormats.isEmpty {
-                        ForEach(folderStore.customFormats) { format in
-                            HStack(spacing: 9) {
-                                Toggle(
-                                    format.menuTitle,
-                                    isOn: Binding(
-                                        get: { format.isEnabled },
-                                        set: { folderStore.setEnabled($0, for: format) }
-                                    )
-                                )
-                                .toggleStyle(.checkbox)
-                                Spacer()
-                                Button(role: .destructive) {
-                                    folderStore.removeCustomFormat(format)
-                                } label: {
-                                    Image(systemName: "minus.circle")
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-
-                    HStack(spacing: 8) {
-                        TextField("输入后缀，例如 log 或 yaml", text: $customFormatSuffix)
-                            .textFieldStyle(.roundedBorder)
-                        Button("添加") {
-                            folderStore.addCustomFormat(suffix: customFormatSuffix)
-                            if folderStore.errorMessage == nil {
-                                customFormatSuffix = ""
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                }
-                .padding(.vertical, 3)
-            }
-
-            GroupBox("创建时命名") {
-                Picker(
-                    "命名方式",
-                    selection: Binding(
-                        get: { folderStore.newFileNamingMode },
-                        set: { folderStore.setNewFileNamingMode($0) }
-                    )
-                ) {
-                    ForEach(NewFileNamingMode.allCases) { mode in
-                        Text(mode.title).tag(mode)
-                    }
-                }
-                .pickerStyle(.radioGroup)
-            }
-
-            GroupBox("自定义模板") {
-                VStack(alignment: .leading, spacing: 10) {
-                    if folderStore.templateDirectories.isEmpty {
-                        Text("添加目录时保存模板地址；目录内容变化后可手动刷新。")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(folderStore.templateDirectories) { directory in
-                            HStack(spacing: 9) {
-                                Image(systemName: "folder")
-                                    .foregroundStyle(.tint)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(directory.displayName)
-                                    Text("\(directory.templates.count) 个模板地址")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Button(role: .destructive) {
-                                    folderStore.removeTemplateDirectory(directory)
-                                } label: {
-                                    Image(systemName: "minus.circle")
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-
-                    HStack {
-                        Button("添加模板目录…") { folderStore.chooseTemplateDirectory() }
-                        Button("刷新模板地址") { folderStore.refreshTemplates() }
-                            .disabled(folderStore.templateDirectories.isEmpty)
-                    }
-                }
-                .padding(.vertical, 3)
-            }
-        }
-    }
-
-    private var editorDetail: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            pageTitle("编辑器", subtitle: "选择在 Finder 中打开文件或文件夹时显示的编辑器。")
-            GroupBox("可用编辑器") {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(EditorApp.allCases.enumerated()), id: \.element.id) { index, app in
-                        appToggle(app.title, isOn: folderStore.isEnabled(app), installed: folderStore.isInstalled(bundleIdentifier: app.bundleIdentifier)) {
-                            folderStore.setEnabled($0, for: app)
-                        }
-
-                        if index < EditorApp.allCases.count - 1 {
-                            Divider()
-                        }
-                    }
-                }
-            }
-            Text("未安装的应用不会出现在 Finder 右键菜单中。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var terminalDetail: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            pageTitle("终端", subtitle: "在当前 Finder 文件夹中打开终端窗口。")
-            GroupBox("可用终端") {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(TerminalApp.allCases.enumerated()), id: \.element.id) { index, app in
-                        appToggle(app.title, isOn: folderStore.isEnabled(app), installed: folderStore.isInstalled(bundleIdentifier: app.bundleIdentifier)) {
-                            folderStore.setEnabled($0, for: app)
-                        }
-
-                        if index < TerminalApp.allCases.count - 1 {
-                            Divider()
-                        }
-                    }
-                }
-            }
-            Text("Terminal 需要在系统设置的“隐私与安全性 > 自动化”中允许 KEY SUPER 控制它。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var aiDetail: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            pageTitle("AI 工具", subtitle: "从 Finder 当前目录直接进入 AI 编程工作流。")
-            GroupBox("可用工具") {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(AITool.allCases.enumerated()), id: \.element.id) { index, tool in
-                        HStack {
-                            Text(tool.title)
-                                .font(.system(size: 13))
-
-                            Spacer()
-
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { folderStore.isEnabled(tool) },
-                                    set: { folderStore.setEnabled($0, for: tool) }
-                                )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                            .controlSize(.small)
-                        }
-                        .frame(minHeight: 42)
-
-                        if index < AITool.allCases.count - 1 {
-                            Divider()
-                        }
-                    }
-                }
-            }
-            Text("未注册对应 URL scheme 的 AI 工具会自动从 Finder 菜单中隐藏。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var copyPathDetail: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            pageTitle("路径复制", subtitle: "支持单选和多选项目，多个结果会按行复制。")
-            GroupBox("复制格式") {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 9) {
-                    ForEach(PathCopyFormat.allCases) { format in
-                        Toggle(
-                            format.title,
-                            isOn: Binding(
-                                get: { folderStore.isEnabled(format) },
-                                set: { folderStore.setEnabled($0, for: format) }
-                            )
-                        )
-                        .toggleStyle(.checkbox)
-                    }
-                }
-                .padding(.vertical, 3)
-            }
-        }
-    }
-
-    private var organizeDetail: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            pageTitle("文件整理", subtitle: "管理复制、移动和批量重命名功能。")
-            GroupBox("功能") {
-                VStack(alignment: .leading, spacing: 9) {
-                    ForEach([MenuFeature.organize, MenuFeature.clipboard, MenuFeature.batchRename]) { feature in
-                        Toggle(
-                            feature.title,
-                            isOn: Binding(
-                                get: { folderStore.isEnabled(feature) },
-                                set: { folderStore.setEnabled($0, for: feature) }
-                            )
-                        )
-                        .toggleStyle(.checkbox)
-                    }
-                }
-                .padding(.vertical, 3)
-            }
-
-            GroupBox("常用目录") {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("这些目录会显示在 Finder 的“复制到”和“移动到”菜单中。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    if folderStore.favoriteFolders.isEmpty {
-                        Text("尚未添加常用目录。")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(folderStore.favoriteFolders) { folder in
-                            HStack(spacing: 9) {
-                                Image(systemName: "folder")
-                                    .foregroundStyle(.tint)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(folder.displayName)
-                                    Text(folder.path)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                }
-                                Spacer()
-                                Button(role: .destructive) {
-                                    folderStore.removeFavoriteFolder(folder)
-                                } label: {
-                                    Image(systemName: "minus.circle")
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-
-                    Button("添加常用目录…") { folderStore.chooseFavoriteFolders() }
-                }
-                .padding(.vertical, 3)
-            }
-        }
-    }
-
-    private var authorizationDetail: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            pageTitle("文件夹授权", subtitle: "KEY SUPER 只会在这些文件夹及其子文件夹中显示右键菜单。")
+            pageTitle("右键菜单", subtitle: "设置 Finder 中显示哪些功能，并管理菜单使用权限。")
 
             GroupBox("Finder 扩展") {
                 HStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Finder 右键扩展")
+                        Text("Finder 右键菜单")
                             .font(.system(size: 14, weight: .medium))
-                        Text(isFinderExtensionEnabled ? "扩展已启用，可以在授权目录中使用。" : "扩展尚未启用，Finder 菜单不会显示。")
+                        Text("启用后，KEY SUPER 菜单会显示在 Finder 的右键菜单中。")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                     }
@@ -550,10 +206,10 @@ struct ContentView: View {
                 .frame(minHeight: 44)
             }
 
-            GroupBox("文件夹访问") {
+            GroupBox("授权") {
                 VStack(alignment: .leading, spacing: 9) {
                     if folderStore.folders.isEmpty {
-                        Text("尚未授权文件夹。推荐授权个人主目录，以覆盖桌面、文稿和下载等常用位置。")
+                        Text("尚未授权文件夹。添加后，KEY SUPER 才会在对应位置显示右键菜单。")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     } else {
@@ -583,35 +239,347 @@ struct ContentView: View {
                 }
                 .padding(.vertical, 3)
             }
+
+            GroupBox("右键功能") {
+                VStack(alignment: .leading, spacing: 0) {
+                    navigationRow(
+                        title: "新建文件",
+                        subtitle: "创建空白文件或模板文件",
+                        section: .newFile,
+                        status: "\(enabledNewFileCount) 项"
+                    )
+                    Divider()
+                    navigationRow(
+                        title: "打开方式",
+                        subtitle: "选择终端、编辑器或 AI 工具",
+                        section: .openMethod,
+                        status: "\(enabledOpenMethodCount) 项"
+                    )
+                    Divider()
+                    navigationRow(
+                        title: "文件操作",
+                        subtitle: "复制路径、复制移动和批量处理",
+                        section: .fileOperations,
+                        status: "\(enabledFileOperationCount) 项"
+                    )
+                }
+                .padding(.vertical, 3)
+            }
         }
     }
 
-    private var folderSummary: some View {
-        GroupBox {
-            if folderStore.folders.isEmpty {
-                Text("尚未授权文件夹")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(folderStore.folders.prefix(3)) { folder in
-                        HStack(spacing: 8) {
-                            Image(systemName: "folder.fill")
-                                .foregroundStyle(.tint)
-                            Text(folder.path)
-                                .font(.callout)
-                                .lineLimit(1)
-                            Spacer()
+    private var newFileDetail: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            pageTitle("新建文件", subtitle: "配置空白文件和模板文件的创建方式。")
+
+            GroupBox("空白文件格式") {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 9) {
+                    ForEach(FileFormat.allCases) { format in
+                        Toggle(
+                            format.shortName,
+                            isOn: Binding(
+                                get: { folderStore.isEnabled(format) },
+                                set: { folderStore.setEnabled($0, for: format) }
+                            )
+                        )
+                        .toggleStyle(.checkbox)
+                    }
+                }
+                .padding(.vertical, 3)
+
+                if folderStore.enabledFormats.isEmpty {
+                    Text("至少启用一种格式，Finder 中才会显示“新建”菜单。")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .padding(.top, 8)
+                }
+            }
+
+            GroupBox("自定义后缀") {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("添加后，后缀会出现在 Finder 的“新建”菜单中。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if !folderStore.customFormats.isEmpty {
+                        ForEach(folderStore.customFormats) { format in
+                            HStack(spacing: 9) {
+                                Toggle(
+                                    format.menuTitle,
+                                    isOn: Binding(
+                                        get: { format.isEnabled },
+                                        set: { folderStore.setEnabled($0, for: format) }
+                                    )
+                                )
+                                .toggleStyle(.checkbox)
+                                Spacer()
+                                Button(role: .destructive) {
+                                    folderStore.removeCustomFormat(format)
+                                } label: {
+                                    Image(systemName: "minus.circle")
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
-                    if folderStore.folders.count > 3 {
-                        Text("还有 \(folderStore.folders.count - 3) 个文件夹…")
+
+                    HStack(spacing: 8) {
+                        TextField("例如：log、yaml、conf", text: $customFormatSuffix)
+                            .textFieldStyle(.roundedBorder)
+                        Button("添加后缀") {
+                            folderStore.addCustomFormat(suffix: customFormatSuffix)
+                            if folderStore.errorMessage == nil {
+                                customFormatSuffix = ""
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+                .padding(.vertical, 3)
+            }
+
+            GroupBox("文件命名") {
+                Picker(
+                    "命名方式",
+                    selection: Binding(
+                        get: { folderStore.newFileNamingMode },
+                        set: { folderStore.setNewFileNamingMode($0) }
+                    )
+                ) {
+                    ForEach(NewFileNamingMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+            }
+
+            GroupBox("模板文件") {
+                VStack(alignment: .leading, spacing: 10) {
+                    if folderStore.templateDirectories.isEmpty {
+                        Text("只保存模板目录地址，创建时实时复制模板内容。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(folderStore.templateDirectories) { directory in
+                            HStack(spacing: 9) {
+                                Image(systemName: "folder")
+                                    .foregroundStyle(.tint)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(directory.displayName)
+                                    Text("模板目录")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Button(role: .destructive) {
+                                    folderStore.removeTemplateDirectory(directory)
+                                } label: {
+                                    Image(systemName: "minus.circle")
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    HStack {
+                        Button("添加模板目录…") { folderStore.chooseTemplateDirectory() }
+                    }
+                }
+                .padding(.vertical, 3)
+            }
+        }
+    }
+
+    private var openMethodDetail: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            pageTitle("打开方式", subtitle: "选择可以从 Finder 中打开文件或文件夹的应用。")
+
+            GroupBox("编辑器") {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(EditorApp.allCases.enumerated()), id: \.element.id) { index, app in
+                        appToggle(app.title, isOn: folderStore.isEnabled(app), installed: folderStore.isInstalled(bundleIdentifier: app.bundleIdentifier)) {
+                            folderStore.setEnabled($0, for: app)
+                        }
+
+                        if index < EditorApp.allCases.count - 1 {
+                            Divider()
+                        }
                     }
                 }
             }
+
+            GroupBox("终端") {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(TerminalApp.allCases.enumerated()), id: \.element.id) { index, app in
+                        appToggle(app.title, isOn: folderStore.isEnabled(app), installed: folderStore.isInstalled(bundleIdentifier: app.bundleIdentifier)) {
+                            folderStore.setEnabled($0, for: app)
+                        }
+
+                        if index < TerminalApp.allCases.count - 1 {
+                            Divider()
+                        }
+                    }
+                }
+            }
+
+            GroupBox("AI 工具") {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(AITool.allCases.enumerated()), id: \.element.id) { index, tool in
+                        appToggle(tool.title, isOn: folderStore.isEnabled(tool), installed: isInstalled(tool)) {
+                            folderStore.setEnabled($0, for: tool)
+                        }
+
+                        if index < AITool.allCases.count - 1 {
+                            Divider()
+                        }
+                    }
+                }
+            }
+
+            Text("未找到的应用会自动从 Finder 菜单中隐藏。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
+    }
+
+    private var fileOperationsDetail: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            pageTitle("文件操作", subtitle: "配置路径复制、文件复制移动和批量处理功能。")
+
+            GroupBox("复制内容") {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(PathCopyFormat.allCases.enumerated()), id: \.element.id) { index, format in
+                        Toggle(
+                            format.title,
+                            isOn: Binding(
+                                get: { folderStore.isEnabled(format) },
+                                set: { folderStore.setEnabled($0, for: format) }
+                            )
+                        )
+                        .toggleStyle(.checkbox)
+                        .frame(minHeight: 38)
+
+                        if index < PathCopyFormat.allCases.count - 1 {
+                            Divider()
+                        }
+                    }
+                }
+                .padding(.vertical, 3)
+            }
+
+            GroupBox("复制和移动") {
+                VStack(alignment: .leading, spacing: 9) {
+                    featureToggle(MenuFeature.organize)
+                }
+                .padding(.vertical, 3)
+            }
+
+            GroupBox("常用目录") {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("这些目录会显示在“复制到”和“移动到”菜单中。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if folderStore.favoriteFolders.isEmpty {
+                        Text("尚未添加常用目录。")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(folderStore.favoriteFolders) { folder in
+                            HStack(spacing: 9) {
+                                Image(systemName: "folder")
+                                    .foregroundStyle(.tint)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(folder.displayName)
+                                    Text(folder.path)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                                Spacer()
+                                Button("移除", role: .destructive) {
+                                    folderStore.removeFavoriteFolder(folder)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    Button("添加常用目录…") { folderStore.chooseFavoriteFolders() }
+                }
+                .padding(.vertical, 3)
+            }
+
+            GroupBox("批量处理") {
+                VStack(alignment: .leading, spacing: 9) {
+                    featureToggle(MenuFeature.batchRename)
+                }
+                .padding(.vertical, 3)
+            }
+        }
+    }
+
+    private func navigationRow(title: String, subtitle: String, section: SettingsSection, status: String) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.16)) {
+                selectedSection = section
+            }
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.primary)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(status)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(minHeight: 52)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var enabledNewFileCount: Int {
+        folderStore.enabledFormats.count
+            + folderStore.customFormats.filter(\.isEnabled).count
+            + folderStore.templateDirectories.count
+    }
+
+    private var enabledOpenMethodCount: Int {
+        folderStore.enabledEditorApps.count
+            + folderStore.enabledTerminalApps.count
+            + folderStore.enabledAITools.count
+    }
+
+    private var enabledFileOperationCount: Int {
+        folderStore.enabledPathCopyFormats.count
+            + (folderStore.isEnabled(.organize) ? 1 : 0)
+            + (folderStore.isEnabled(.batchRename) ? 1 : 0)
+    }
+
+    private func featureToggle(_ feature: MenuFeature) -> some View {
+        Toggle(
+            feature.title,
+            isOn: Binding(
+                get: { folderStore.isEnabled(feature) },
+                set: { folderStore.setEnabled($0, for: feature) }
+            )
+        )
+        .toggleStyle(.switch)
+        .controlSize(.small)
+        .frame(minHeight: 42)
     }
 
     private func pageTitle(_ title: String, subtitle: String) -> some View {
@@ -647,7 +615,7 @@ struct ContentView: View {
                     .font(.caption)
                     .foregroundStyle(.green)
             } else {
-                Text("未安装，自动隐藏")
+                Text("未找到应用")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -656,8 +624,23 @@ struct ContentView: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.small)
+                .disabled(!installed)
         }
         .frame(minHeight: 42)
+    }
+
+    private func isInstalled(_ tool: AITool) -> Bool {
+        var components = URLComponents()
+        switch tool {
+        case .claudeCode:
+            components.scheme = "claude"
+            components.host = "code"
+            components.path = "/new"
+        case .codex:
+            components.scheme = "codex"
+            components.host = "new"
+        }
+        return components.url.flatMap(NSWorkspace.shared.urlForApplication(toOpen:)) != nil
     }
 
     private func showExtensionManagement() {

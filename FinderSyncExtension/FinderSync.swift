@@ -8,7 +8,7 @@ final class FinderSync: FIFinderSync {
     private var contextualItems: [URL] = []
     private var contextualFormats: [FileFormat] = []
     private var contextualCustomFormats: [CustomFileFormat] = []
-    private var contextualTemplates: [(directory: TemplateDirectoryRecord, template: TemplateRecord)] = []
+    private var contextualTemplates: [TemplateDirectoryRecord] = []
     private var contextualTerminalApps: [TerminalApp] = []
     private var contextualEditorApps: [EditorApp] = []
     private var contextualPathCopyFormats: [PathCopyFormat] = []
@@ -55,7 +55,7 @@ final class FinderSync: FIFinderSync {
         contextualItems = context.items
         contextualFormats = SharedSettings.loadEnabledFormats()
         contextualCustomFormats = SharedSettings.loadCustomFileFormats().filter(\.isEnabled)
-        contextualTemplates = SharedSettings.allTemplates()
+        contextualTemplates = SharedSettings.loadTemplateDirectories()
         contextualTerminalApps = SharedSettings.loadEnabledTerminalApps().filter(isInstalled)
         contextualEditorApps = SharedSettings.loadEnabledEditorApps().filter(isInstalled)
         contextualPathCopyFormats = SharedSettings.loadEnabledPathCopyFormats()
@@ -81,8 +81,8 @@ final class FinderSync: FIFinderSync {
                     submenu.addItem(.separator())
                 }
                 addSectionTitle("模板文件", to: submenu)
-                for (index, template) in contextualTemplates.enumerated() {
-                    addAction(template.template.displayName, to: submenu, selector: #selector(createTemplate(_:)), tag: index)
+                for (index, directory) in contextualTemplates.enumerated() {
+                    addAction(directory.displayName, to: submenu, selector: #selector(createTemplate(_:)), tag: index)
                 }
             }
             addSubmenu("新建", submenu: submenu, to: menu)
@@ -91,11 +91,11 @@ final class FinderSync: FIFinderSync {
         if enabledFeatures.contains(.clipboard) {
             let clipboardMenu = NSMenu(title: "从剪贴板创建")
             if NSPasteboard.general.availableType(from: [.string]) != nil {
-                addAction("文本文件 (.txt)", to: clipboardMenu, selector: #selector(createFromClipboard(_:)), tag: 0)
-                addAction("Markdown 文档 (.md)", to: clipboardMenu, selector: #selector(createFromClipboard(_:)), tag: 1)
+                addAction(".txt 文本文件", to: clipboardMenu, selector: #selector(createFromClipboard(_:)), tag: 0)
+                addAction(".md Markdown 文档", to: clipboardMenu, selector: #selector(createFromClipboard(_:)), tag: 1)
             }
             if NSPasteboard.general.availableType(from: [.png, .tiff]) != nil {
-                addAction("PNG 图片 (.png)", to: clipboardMenu, selector: #selector(createFromClipboard(_:)), tag: 2)
+                addAction(".png 图片", to: clipboardMenu, selector: #selector(createFromClipboard(_:)), tag: 2)
             }
             if !clipboardMenu.items.isEmpty {
                 addSubmenu("从剪贴板创建", submenu: clipboardMenu, to: menu)
@@ -182,11 +182,10 @@ final class FinderSync: FIFinderSync {
             logger.error("E34 template action aborted")
             return
         }
-        let item = contextualTemplates[sender.tag]
+        let directoryRecord = contextualTemplates[sender.tag]
         openSimpleRequest(host: "template", queryItems: [
             URLQueryItem(name: "path", value: directory.path),
-            URLQueryItem(name: "directoryID", value: item.directory.id.uuidString),
-            URLQueryItem(name: "relativePath", value: item.template.relativePath)
+            URLQueryItem(name: "directoryID", value: directoryRecord.id.uuidString)
         ])
     }
 

@@ -15,25 +15,25 @@ enum FileFormat: String, Codable, CaseIterable, Identifiable {
 
     var menuTitle: String {
         switch self {
-        case .txt: "文本文档 (.txt)"
-        case .markdown: "Markdown 文档 (.md)"
-        case .python: "Python 脚本 (.py)"
-        case .json: "JSON 文件 (.json)"
-        case .xlsx: "Excel 工作簿 (.xlsx)"
-        case .csv: "CSV 表格 (.csv)"
-        case .docx: "Word 文档 (.docx)"
+        case .txt: ".txt"
+        case .markdown: ".md"
+        case .python: ".py"
+        case .json: ".json"
+        case .xlsx: ".xlsx"
+        case .csv: ".csv"
+        case .docx: ".docx"
         }
     }
 
     var shortName: String {
         switch self {
-        case .txt: "TXT"
-        case .markdown: "Markdown"
-        case .python: "Python"
-        case .json: "JSON"
-        case .xlsx: "Excel"
-        case .csv: "CSV"
-        case .docx: "Word"
+        case .txt: ".txt"
+        case .markdown: ".md"
+        case .python: ".py"
+        case .json: ".json"
+        case .xlsx: ".xlsx"
+        case .csv: ".csv"
+        case .docx: ".docx"
         }
     }
 
@@ -61,7 +61,7 @@ struct CustomFileFormat: Codable, Identifiable, Hashable {
         self.isEnabled = isEnabled
     }
 
-    var menuTitle: String { "自定义文件 (.\(suffix))" }
+    var menuTitle: String { ".\(suffix)" }
     var shortName: String { ".\(suffix)" }
     var baseName: String { "新建 \(suffix.uppercased()) 文件" }
 }
@@ -83,9 +83,9 @@ enum MenuFeature: String, Codable, CaseIterable, Identifiable {
         case .newFile: "新建文件"
         case .terminal: "在终端中打开"
         case .editor: "用编辑器打开"
-        case .copyPath: "复制路径"
+        case .copyPath: "复制内容"
         case .ai: "用 AI 打开"
-        case .organize: "复制或移动到常用目录"
+        case .organize: "复制和移动"
         case .clipboard: "从剪贴板创建文件"
         case .batchRename: "批量重命名"
         }
@@ -159,9 +159,9 @@ enum PathCopyFormat: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .absolute: "绝对路径"
-        case .relative: "相对授权文件夹路径"
-        case .fileURL: "file:// URL"
+        case .absolute: "完整路径"
+        case .relative: "相对路径"
+        case .fileURL: "文件 URL"
         case .terminal: "终端路径"
         case .fileName: "文件名"
         case .baseName: "不含扩展名的文件名"
@@ -198,34 +198,17 @@ enum AITool: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-struct TemplateRecord: Codable, Identifiable, Equatable {
-    let id: UUID
-    let displayName: String
-    let relativePath: String
-}
-
 struct TemplateDirectoryRecord: Codable, Identifiable, Equatable {
     let id: UUID
     let displayName: String
     let path: String
     let bookmark: Data
-    let templates: [TemplateRecord]
 
-    init(id: UUID, displayName: String, path: String, bookmark: Data, templates: [TemplateRecord] = []) {
+    init(id: UUID, displayName: String, path: String, bookmark: Data) {
         self.id = id
         self.displayName = displayName
         self.path = path
         self.bookmark = bookmark
-        self.templates = templates
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        displayName = try container.decode(String.self, forKey: .displayName)
-        path = try container.decode(String.self, forKey: .path)
-        bookmark = try container.decode(Data.self, forKey: .bookmark)
-        templates = try container.decodeIfPresent([TemplateRecord].self, forKey: .templates) ?? []
     }
 }
 
@@ -594,12 +577,6 @@ enum SharedSettings {
         defaults.set(try JSONEncoder().encode(directories), forKey: templateDirectoriesKey)
 #endif
         notifyConfigurationChanged()
-    }
-
-    static func allTemplates() -> [(directory: TemplateDirectoryRecord, template: TemplateRecord)] {
-        loadTemplateDirectories().flatMap { directory in
-            directory.templates.map { (directory, $0) }
-        }
     }
 
     static func loadFavoriteFolders() -> [FavoriteFolderRecord] {
