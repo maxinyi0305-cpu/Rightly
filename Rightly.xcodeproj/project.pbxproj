@@ -1,0 +1,531 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A00000000000000000000001 /* RightlyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* RightlyApp.swift */; };
+		A00000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000012 /* ContentView.swift */; };
+		A00000000000000000000003 /* FinderSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000013 /* FinderSync.swift */; };
+		A00000000000000000000004 /* RightlyFinderExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A00000000000000000000021 /* RightlyFinderExtension.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A00000000000000000000005 /* FileCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000017 /* FileCreator.swift */; };
+		A00000000000000000000006 /* FolderAccessStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000018 /* FolderAccessStore.swift */; };
+		A00000000000000000000007 /* SharedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000019 /* SharedSettings.swift */; };
+		A00000000000000000000008 /* SharedSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000019 /* SharedSettings.swift */; };
+		A00000000000000000000009 /* Templates/BlankWorkbook.xlsx in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000023 /* Templates/BlankWorkbook.xlsx */; };
+		A0000000000000000000000A /* Templates/BlankDocument.docx in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000024 /* Templates/BlankDocument.docx */; };
+		A0000000000000000000000B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000027 /* Assets.xcassets */; };
+		A0000000000000000000000C /* RightlyUninstaller in Embed Uninstaller */ = {isa = PBXBuildFile; fileRef = A00000000000000000000029 /* RightlyUninstaller */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		A0000000000000000000000D /* RightlyUninstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000028 /* RightlyUninstaller.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A00000000000000000000031 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000040 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000051;
+			remoteInfo = RightlyFinderExtension;
+		};
+		A00000000000000000000033 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000040 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000052;
+			remoteInfo = RightlyUninstaller;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A00000000000000000000062 /* Embed Uninstaller */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				A0000000000000000000000C /* RightlyUninstaller in Embed Uninstaller */,
+			);
+			name = "Embed Uninstaller";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000061 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A00000000000000000000004 /* RightlyFinderExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		A00000000000000000000011 /* RightlyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RightlyApp.swift; sourceTree = "<group>"; };
+		A00000000000000000000012 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A00000000000000000000013 /* FinderSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderSync.swift; sourceTree = "<group>"; };
+		A00000000000000000000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A00000000000000000000015 /* Rightly.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rightly.entitlements; sourceTree = "<group>"; };
+		A00000000000000000000016 /* RightlyFinderExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RightlyFinderExtension.entitlements; sourceTree = "<group>"; };
+		A00000000000000000000017 /* FileCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCreator.swift; sourceTree = "<group>"; };
+		A00000000000000000000018 /* FolderAccessStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderAccessStore.swift; sourceTree = "<group>"; };
+		A00000000000000000000019 /* SharedSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedSettings.swift; sourceTree = "<group>"; };
+		A00000000000000000000020 /* Rightly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rightly.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000021 /* RightlyFinderExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RightlyFinderExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000022 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A00000000000000000000023 /* Templates/BlankWorkbook.xlsx */ = {isa = PBXFileReference; lastKnownFileType = file; path = Templates/BlankWorkbook.xlsx; sourceTree = "<group>"; };
+		A00000000000000000000024 /* Templates/BlankDocument.docx */ = {isa = PBXFileReference; lastKnownFileType = file; path = Templates/BlankDocument.docx; sourceTree = "<group>"; };
+		A00000000000000000000025 /* Rightly.Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rightly.Debug.entitlements; sourceTree = "<group>"; };
+		A00000000000000000000026 /* RightlyFinderExtension.Debug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RightlyFinderExtension.Debug.entitlements; sourceTree = "<group>"; };
+		A00000000000000000000027 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A00000000000000000000028 /* RightlyUninstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RightlyUninstaller.swift; sourceTree = "<group>"; };
+		A00000000000000000000029 /* RightlyUninstaller */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RightlyUninstaller; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A00000000000000000000071 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000072 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A00000000000000000000041 = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000042 /* Rightly */,
+				A00000000000000000000043 /* RightlyFinderExtension */,
+				A00000000000000000000046 /* RightlyUninstaller */,
+				A00000000000000000000045 /* Shared */,
+				A00000000000000000000044 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A00000000000000000000042 /* Rightly */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000011 /* RightlyApp.swift */,
+				A00000000000000000000012 /* ContentView.swift */,
+				A00000000000000000000017 /* FileCreator.swift */,
+				A00000000000000000000018 /* FolderAccessStore.swift */,
+				A00000000000000000000023 /* Templates/BlankWorkbook.xlsx */,
+				A00000000000000000000024 /* Templates/BlankDocument.docx */,
+				A00000000000000000000027 /* Assets.xcassets */,
+				A00000000000000000000014 /* Info.plist */,
+				A00000000000000000000015 /* Rightly.entitlements */,
+				A00000000000000000000025 /* Rightly.Debug.entitlements */,
+			);
+			path = Rightly;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000043 /* RightlyFinderExtension */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000013 /* FinderSync.swift */,
+				A00000000000000000000022 /* Info.plist */,
+				A00000000000000000000016 /* RightlyFinderExtension.entitlements */,
+				A00000000000000000000026 /* RightlyFinderExtension.Debug.entitlements */,
+			);
+			path = RightlyFinderExtension;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000044 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000020 /* Rightly.app */,
+				A00000000000000000000021 /* RightlyFinderExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000045 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000019 /* SharedSettings.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000046 /* RightlyUninstaller */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000028 /* RightlyUninstaller.swift */,
+			);
+			path = RightlyUninstaller;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A00000000000000000000050 /* Rightly */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000081 /* Build configuration list for PBXNativeTarget "Rightly" */;
+			buildPhases = (
+				A00000000000000000000071 /* Frameworks */,
+				A00000000000000000000091 /* Sources */,
+				A00000000000000000000073 /* Resources */,
+				A00000000000000000000061 /* Embed App Extensions */,
+				A00000000000000000000062 /* Embed Uninstaller */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A00000000000000000000032 /* PBXTargetDependency */,
+				A00000000000000000000034 /* PBXTargetDependency */,
+			);
+			name = Rightly;
+			productName = Rightly;
+			productReference = A00000000000000000000020 /* Rightly.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A00000000000000000000051 /* RightlyFinderExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000082 /* Build configuration list for PBXNativeTarget "RightlyFinderExtension" */;
+			buildPhases = (
+				A00000000000000000000072 /* Frameworks */,
+				A00000000000000000000092 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RightlyFinderExtension;
+			productName = RightlyFinderExtension;
+			productReference = A00000000000000000000021 /* RightlyFinderExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		A00000000000000000000052 /* RightlyUninstaller */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000083 /* Build configuration list for PBXNativeTarget "RightlyUninstaller" */;
+			buildPhases = (
+				A00000000000000000000093 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RightlyUninstaller;
+			productName = RightlyUninstaller;
+			productReference = A00000000000000000000029 /* RightlyUninstaller */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A00000000000000000000040 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					A00000000000000000000050 = {
+						CreatedOnToolsVersion = 16.4;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups = {
+								enabled = 1;
+							};
+							com.apple.Sandbox = {
+								enabled = 1;
+							};
+						};
+					};
+					A00000000000000000000051 = {
+						CreatedOnToolsVersion = 16.4;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups = {
+								enabled = 1;
+							};
+							com.apple.Sandbox = {
+								enabled = 1;
+							};
+						};
+					};
+				};
+			};
+			buildConfigurationList = A00000000000000000000080 /* Build configuration list for PBXProject "Rightly" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				"zh-Hans",
+			);
+			mainGroup = A00000000000000000000041;
+			productRefGroup = A00000000000000000000044 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A00000000000000000000050 /* Rightly */,
+				A00000000000000000000051 /* RightlyFinderExtension */,
+				A00000000000000000000052 /* RightlyUninstaller */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A00000000000000000000073 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000009 /* Templates/BlankWorkbook.xlsx in Resources */,
+				A0000000000000000000000A /* Templates/BlankDocument.docx in Resources */,
+				A0000000000000000000000B /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A00000000000000000000091 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000001 /* RightlyApp.swift in Sources */,
+				A00000000000000000000002 /* ContentView.swift in Sources */,
+				A00000000000000000000005 /* FileCreator.swift in Sources */,
+				A00000000000000000000006 /* FolderAccessStore.swift in Sources */,
+				A00000000000000000000007 /* SharedSettings.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000092 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000003 /* FinderSync.swift in Sources */,
+				A00000000000000000000008 /* SharedSettings.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000093 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0000000000000000000000D /* RightlyUninstaller.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A00000000000000000000032 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000051 /* RightlyFinderExtension */;
+			targetProxy = A00000000000000000000031 /* PBXContainerItemProxy */;
+		};
+		A00000000000000000000034 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000052 /* RightlyUninstaller */;
+			targetProxy = A00000000000000000000033 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A00000000000000000000100 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000101 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A00000000000000000000110 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Rightly/Rightly.Debug.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R56Z3MANGU;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Rightly/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rightly.app;
+				PRODUCT_NAME = Rightly;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000111 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Rightly/Rightly.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R56Z3MANGU;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Rightly/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rightly.app;
+				PRODUCT_NAME = Rightly;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A00000000000000000000120 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = RightlyFinderExtension/RightlyFinderExtension.Debug.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R56Z3MANGU;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RightlyFinderExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rightly.app.RightlyFinderExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000121 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = RightlyFinderExtension/RightlyFinderExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R56Z3MANGU;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RightlyFinderExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rightly.app.RightlyFinderExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A00000000000000000000130 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R56Z3MANGU;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_NAME = RightlyUninstaller;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000131 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R56Z3MANGU;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_NAME = RightlyUninstaller;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A00000000000000000000080 /* Build configuration list for PBXProject "Rightly" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000100 /* Debug */,
+				A00000000000000000000101 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000081 /* Build configuration list for PBXNativeTarget "Rightly" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000110 /* Debug */,
+				A00000000000000000000111 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000082 /* Build configuration list for PBXNativeTarget "RightlyFinderExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000120 /* Debug */,
+				A00000000000000000000121 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000083 /* Build configuration list for PBXNativeTarget "RightlyUninstaller" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000130 /* Debug */,
+				A00000000000000000000131 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A00000000000000000000040 /* Project object */;
+}

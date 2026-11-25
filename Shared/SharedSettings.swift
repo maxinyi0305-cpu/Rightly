@@ -13,15 +13,27 @@ enum FileFormat: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var settingsTitle: String {
+        switch self {
+        case .txt: "文本文件（.txt）"
+        case .markdown: "Markdown 文档（.md）"
+        case .python: "Python 脚本（.py）"
+        case .json: "JSON 文件（.json）"
+        case .xlsx: "Excel 工作簿（.xlsx）"
+        case .csv: "CSV 表格（.csv）"
+        case .docx: "Word 文档（.docx）"
+        }
+    }
+
     var menuTitle: String {
         switch self {
-        case .txt: ".txt"
-        case .markdown: ".md"
-        case .python: ".py"
-        case .json: ".json"
-        case .xlsx: ".xlsx"
-        case .csv: ".csv"
-        case .docx: ".docx"
+        case .txt: "纯文本 (.txt)"
+        case .markdown: "Markdown (.md)"
+        case .python: "Python 脚本 (.py)"
+        case .json: "JSON (.json)"
+        case .xlsx: "Excel 工作簿 (.xlsx)"
+        case .csv: "CSV 表格 (.csv)"
+        case .docx: "Word 文档 (.docx)"
         }
     }
 
@@ -61,7 +73,8 @@ struct CustomFileFormat: Codable, Identifiable, Hashable {
         self.isEnabled = isEnabled
     }
 
-    var menuTitle: String { ".\(suffix)" }
+    var settingsTitle: String { ".\(suffix)" }
+    var menuTitle: String { "\(suffix.uppercased()) (.\(suffix))" }
     var shortName: String { ".\(suffix)" }
     var baseName: String { "新建 \(suffix.uppercased()) 文件" }
 }
@@ -82,36 +95,70 @@ enum MenuFeature: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .newFile: "新建文件"
         case .terminal: "在终端中打开"
-        case .editor: "用编辑器打开"
-        case .copyPath: "复制内容"
-        case .ai: "用 AI 打开"
-        case .organize: "复制和移动"
-        case .clipboard: "从剪贴板创建文件"
+        case .editor: "使用编辑器打开"
+        case .copyPath: "拷贝文件信息"
+        case .ai: "使用 AI 工具打开"
+        case .organize: "拷贝或移动到常用文件夹"
+        case .clipboard: "从剪贴板新建"
         case .batchRename: "批量重命名"
         }
     }
 }
 
 enum TerminalApp: String, Codable, CaseIterable, Identifiable {
-    case warp
-    case iTerm
     case terminal
+    case ghostty
+    case iTerm
+    case warp
+    case wezTerm
+    case alacritty
+    case kitty
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .terminal: "终端（Terminal）"
+        case .ghostty: "Ghostty"
+        case .iTerm: "iTerm2"
         case .warp: "Warp"
-        case .iTerm: "iTerm"
-        case .terminal: "Terminal"
+        case .wezTerm: "WezTerm"
+        case .alacritty: "Alacritty"
+        case .kitty: "kitty"
+        }
+    }
+
+    var menuTitle: String {
+        switch self {
+        case .terminal: "终端"
+        default: title
         }
     }
 
     var bundleIdentifier: String {
         switch self {
-        case .warp: "dev.warp.Warp"
-        case .iTerm: "com.googlecode.iterm2"
         case .terminal: "com.apple.Terminal"
+        case .ghostty: "com.mitchellh.ghostty"
+        case .iTerm: "com.googlecode.iterm2"
+        case .warp: "dev.warp.Warp"
+        case .wezTerm: "com.github.wez.wezterm"
+        case .alacritty: "org.alacritty"
+        case .kitty: "net.kovidgoyal.kitty"
+        }
+    }
+
+    func launchArguments(workingDirectory path: String) -> [String]? {
+        switch self {
+        case .ghostty:
+            ["--working-directory=\(path)"]
+        case .wezTerm:
+            ["start", "--cwd", path]
+        case .alacritty:
+            ["--working-directory", path]
+        case .kitty:
+            ["--directory", path]
+        case .terminal, .iTerm, .warp:
+            nil
         }
     }
 }
@@ -159,27 +206,25 @@ enum PathCopyFormat: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .absolute: "完整位置（/Users/…）"
+        case .relative: "相对于已添加文件夹的位置"
+        case .fileURL: "文件链接（file://…）"
+        case .terminal: "可粘贴到终端的位置"
+        case .fileName: "文件名"
+        case .baseName: "文件名，不含扩展名"
+        case .markdown: "Markdown 链接"
+        }
+    }
+
+    var menuTitle: String {
+        switch self {
         case .absolute: "完整路径"
         case .relative: "相对路径"
         case .fileURL: "文件 URL"
         case .terminal: "终端路径"
         case .fileName: "文件名"
-        case .baseName: "不含扩展名的文件名"
+        case .baseName: "文件名（不含扩展名）"
         case .markdown: "Markdown 链接"
-        }
-    }
-}
-
-enum NewFileNamingMode: String, Codable, CaseIterable, Identifiable {
-    case automatic
-    case askBeforeCreating
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .automatic: "使用默认名称并自动编号"
-        case .askBeforeCreating: "创建前输入名称"
         }
     }
 }
@@ -246,9 +291,9 @@ struct ActionRequest: Codable {
 }
 
 enum SharedSettings {
-    private static let logger = Logger(subsystem: "com.keysuper.app", category: "SharedSettings")
-    static let appGroupIdentifier = "group.com.keysuper.app"
-    static let configurationDidChangeNotification = Notification.Name("com.keysuper.app.configuration-did-change")
+    private static let logger = Logger(subsystem: "com.rightly.app", category: "SharedSettings")
+    static let appGroupIdentifier = "group.com.rightly.app"
+    static let configurationDidChangeNotification = Notification.Name("com.rightly.app.configuration-did-change")
     private static let foldersKey = "authorizedFolders"
     private static let enabledFormatsKey = "enabledFileFormats"
     private static let customFormatsKey = "customFileFormats"
@@ -259,7 +304,6 @@ enum SharedSettings {
     private static let enabledAIToolsKey = "enabledAITools"
     private static let templateDirectoriesKey = "templateDirectories"
     private static let favoriteFoldersKey = "favoriteFolders"
-    private static let newFileNamingModeKey = "newFileNamingMode"
 
     struct FolderRecord: Codable, Identifiable, Equatable {
         let id: UUID
@@ -278,14 +322,13 @@ enum SharedSettings {
         var enabledEditorAppRawValues: [String]?
         var enabledPathCopyFormatRawValues: [String]?
         var enabledAIToolRawValues: [String]?
-        var newFileNamingModeRawValue: String?
         var templateDirectories: [TemplateDirectoryRecord] = []
         var favoriteFolders: [FavoriteFolderRecord]?
     }
 
     private static var debugConfigurationURL: URL {
         URL(fileURLWithPath: "/Users/Shared", isDirectory: true)
-            .appendingPathComponent("KEY SUPER Debug", isDirectory: true)
+            .appendingPathComponent("Rightly Debug", isDirectory: true)
             .appendingPathComponent("configuration.json")
     }
 
@@ -364,12 +407,12 @@ enum SharedSettings {
     static func loadEnabledFormats() -> [FileFormat] {
 #if DEBUG
         guard let rawValues = loadDebugConfiguration().enabledFormatRawValues else {
-            return FileFormat.allCases
+            return [.txt, .markdown, .python, .json, .xlsx, .csv, .docx]
         }
 #else
         guard let defaults = UserDefaults(suiteName: appGroupIdentifier),
               defaults.object(forKey: enabledFormatsKey) != nil else {
-            return FileFormat.allCases
+            return [.txt, .markdown, .python, .json, .xlsx, .csv, .docx]
         }
         let rawValues = defaults.stringArray(forKey: enabledFormatsKey) ?? []
 #endif
@@ -424,7 +467,18 @@ enum SharedSettings {
 #else
         let rawValues = UserDefaults(suiteName: appGroupIdentifier)?.stringArray(forKey: enabledFeaturesKey)
 #endif
-        guard let rawValues else { return MenuFeature.allCases }
+        guard let rawValues else {
+            return [
+                .newFile,
+                .terminal,
+                .editor,
+                .copyPath,
+                .ai,
+                .organize,
+                .clipboard,
+                .batchRename,
+            ]
+        }
         let enabled = Set(rawValues.compactMap(MenuFeature.init(rawValue:)))
         return MenuFeature.allCases.filter(enabled.contains)
     }
@@ -447,7 +501,9 @@ enum SharedSettings {
 #else
         let rawValues = UserDefaults(suiteName: appGroupIdentifier)?.stringArray(forKey: enabledTerminalAppsKey)
 #endif
-        guard let rawValues else { return [.warp, .iTerm] }
+        guard let rawValues else {
+            return [.terminal, .ghostty, .iTerm, .warp, .wezTerm, .alacritty, .kitty]
+        }
         let enabled = Set(rawValues.compactMap(TerminalApp.init(rawValue:)))
         return TerminalApp.allCases.filter(enabled.contains)
     }
@@ -470,7 +526,9 @@ enum SharedSettings {
 #else
         let rawValues = UserDefaults(suiteName: appGroupIdentifier)?.stringArray(forKey: enabledEditorAppsKey)
 #endif
-        guard let rawValues else { return EditorApp.allCases }
+        guard let rawValues else {
+            return [.visualStudioCode, .cursor, .zed, .xcode, .sublimeText]
+        }
         let enabled = Set(rawValues.compactMap(EditorApp.init(rawValue:)))
         return EditorApp.allCases.filter(enabled.contains)
     }
@@ -493,7 +551,9 @@ enum SharedSettings {
 #else
         let rawValues = UserDefaults(suiteName: appGroupIdentifier)?.stringArray(forKey: enabledPathCopyFormatsKey)
 #endif
-        guard let rawValues else { return [.absolute, .fileURL, .terminal] }
+        guard let rawValues else {
+            return [.absolute, .relative, .terminal, .fileName]
+        }
         let enabled = Set(rawValues.compactMap(PathCopyFormat.init(rawValue:)))
         return PathCopyFormat.allCases.filter(enabled.contains)
     }
@@ -516,7 +576,7 @@ enum SharedSettings {
 #else
         let rawValues = UserDefaults(suiteName: appGroupIdentifier)?.stringArray(forKey: enabledAIToolsKey)
 #endif
-        guard let rawValues else { return AITool.allCases }
+        guard let rawValues else { return [.claudeCode, .codex] }
         let enabled = Set(rawValues.compactMap(AITool.init(rawValue:)))
         return AITool.allCases.filter(enabled.contains)
     }
@@ -529,27 +589,6 @@ enum SharedSettings {
 #else
         guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { throw CocoaError(.fileWriteUnknown) }
         defaults.set(tools.map(\.rawValue), forKey: enabledAIToolsKey)
-#endif
-        notifyConfigurationChanged()
-    }
-
-    static func loadNewFileNamingMode() -> NewFileNamingMode {
-#if DEBUG
-        let rawValue = loadDebugConfiguration().newFileNamingModeRawValue
-#else
-        let rawValue = UserDefaults(suiteName: appGroupIdentifier)?.string(forKey: newFileNamingModeKey)
-#endif
-        return rawValue.flatMap(NewFileNamingMode.init(rawValue:)) ?? .automatic
-    }
-
-    static func saveNewFileNamingMode(_ mode: NewFileNamingMode) throws {
-#if DEBUG
-        var configuration = loadDebugConfiguration()
-        configuration.newFileNamingModeRawValue = mode.rawValue
-        try saveDebugConfiguration(configuration)
-#else
-        guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else { throw CocoaError(.fileWriteUnknown) }
-        defaults.set(mode.rawValue, forKey: newFileNamingModeKey)
 #endif
         notifyConfigurationChanged()
     }
@@ -621,6 +660,41 @@ enum SharedSettings {
         }
         try? FileManager.default.removeItem(at: url)
         return request
+    }
+
+    static func removeAllData() throws {
+#if DEBUG
+        let debugDirectory = debugConfigurationURL.deletingLastPathComponent()
+        if FileManager.default.fileExists(atPath: debugDirectory.path) {
+            try FileManager.default.removeItem(at: debugDirectory)
+        }
+#else
+        guard let defaults = UserDefaults(suiteName: appGroupIdentifier) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        let keys = [
+            foldersKey,
+            enabledFormatsKey,
+            customFormatsKey,
+            enabledFeaturesKey,
+            enabledTerminalAppsKey,
+            enabledEditorAppsKey,
+            enabledPathCopyFormatsKey,
+            enabledAIToolsKey,
+            templateDirectoriesKey,
+            favoriteFoldersKey,
+        ]
+        for key in keys {
+            defaults.removeObject(forKey: key)
+        }
+        defaults.synchronize()
+
+        let requestDirectory = requestDirectoryURL
+        if FileManager.default.fileExists(atPath: requestDirectory.path) {
+            try FileManager.default.removeItem(at: requestDirectory)
+        }
+#endif
+        notifyConfigurationChanged()
     }
 
     private static var requestDirectoryURL: URL {
