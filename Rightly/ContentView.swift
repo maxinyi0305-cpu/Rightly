@@ -68,7 +68,7 @@ struct ContentView: View {
     @State private var isShowingUninstallResult = false
     @State private var uninstallResultMessage = ""
     private let logger = Logger(subsystem: "com.rightly.app", category: "SettingsUI")
-    private let keySuperGreen = Color(red: 0.37, green: 0.72, blue: 0.21)
+    private let rightlyGreen = Color(red: 0.37, green: 0.72, blue: 0.21)
 
     var body: some View {
         VStack(spacing: 0) {
@@ -88,7 +88,7 @@ struct ContentView: View {
             .background(Color(nsColor: .windowBackgroundColor))
         }
         .groupBoxStyle(PreferenceGroupBoxStyle())
-        .tint(keySuperGreen)
+        .tint(rightlyGreen)
         .frame(minWidth: 520, idealWidth: 540, minHeight: 640, idealHeight: 760)
         .background(Color(nsColor: .windowBackgroundColor))
         .ignoresSafeArea(.container, edges: .top)
@@ -121,13 +121,13 @@ struct ContentView: View {
                                 .font(.system(size: 12, weight: .regular))
                                 .lineLimit(1)
                         }
-                        .foregroundStyle(selectedSection == section ? keySuperGreen : Color.secondary)
+                        .foregroundStyle(selectedSection == section ? rightlyGreen : Color.secondary)
                         .frame(width: 82, height: 56)
                         .background {
                             RoundedRectangle(cornerRadius: 9, style: .continuous)
                                 .fill(
                                     selectedSection == section
-                                        ? keySuperGreen.opacity(0.08)
+                                        ? rightlyGreen.opacity(0.08)
                                         : hoveredSection == section
                                             ? Color(nsColor: .separatorColor).opacity(0.12)
                                             : .clear
@@ -154,7 +154,7 @@ struct ContentView: View {
         HStack(spacing: 10) {
             Text(isFinderExtensionEnabled ? "已开启" : "未开启")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(isFinderExtensionEnabled ? keySuperGreen : Color.secondary)
+                .foregroundStyle(isFinderExtensionEnabled ? rightlyGreen : Color.secondary)
 
             Button("管理…") {
                 showExtensionManagement()

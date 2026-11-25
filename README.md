@@ -5,13 +5,13 @@
 <h1 align="center">Rightly（右点）</h1>
 
 <p align="center">
-  <b>A lightweight macOS Finder extension for creating new files from the right-click menu.</b><br>
-  在 Finder 中右键即可新建文件，支持自定义格式、模板与快捷操作。
+  <b>A lightweight, fast macOS Finder extension for creating new files from the right-click menu.</b><br>
+  ⚡ 极速 · 🪶 极轻量 —— 在 Finder 中右键即可新建文件，支持自定义格式、模板与快捷操作。
 </p>
 
 ---
 
-一个极轻量的 macOS Finder 右键新建文件工具。没有常驻菜单栏进程、数据库或网络请求——只在需要时出现。
+一个**资源占用极少、响应迅速**的 macOS Finder 右键新建文件工具。没有常驻菜单栏进程、数据库或网络请求——菜单即点即现，用完即隐。
 
 ## 功能特性
 
