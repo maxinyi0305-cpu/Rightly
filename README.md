@@ -44,17 +44,13 @@
 
 ## 从源码构建
 
-使用 Xcode 打开 `Rightly.xcodeproj`，为两个 target 选择同一个付费开发者团队，并确认 App Group `group.com.rightly.app` 已注册并关联到两个 Bundle ID，然后运行 `Rightly` scheme。
-
-命令行编译检查：
+使用 Xcode 打开 `Rightly.xcodeproj`，为两个 target 选择同一个开发者团队（需注册 App Group `group.com.rightly.app`），运行 `Rightly` scheme。命令行编译检查：
 
 ```sh
 xcodebuild -project Rightly.xcodeproj -scheme Rightly -configuration Release -sdk macosx build CODE_SIGNING_ALLOWED=NO
 ```
 
-### Personal Team 本地测试
-
-`Debug` 配置不依赖 App Group，主应用与扩展通过 `/Users/Shared/Rightly Debug/configuration.json` 共享测试设置。直接运行 Xcode 的 `Rightly` scheme 即可。此临时文件权限只存在于 Debug entitlements；`Release` 始终使用正式 App Group，提交商店时不会包含调试例外。
+> 使用 Personal Team（免费账号）时，Debug 配置不依赖 App Group，可直接运行调试；Release 始终使用正式 App Group。
 
 ## 设计
 
