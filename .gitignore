@@ -9,8 +9,14 @@ xcuserdata/
 # Build output
 DerivedData/
 build/
+dist/
 *.xcarchive
 *.dSYM
+
+# Local design assets and diagnostics
+.audit/
+IconConcepts/
+IconExports/
 
 # Signing and distribution artifacts
 *.cer
