@@ -2,26 +2,26 @@
 
 ## Project Structure & Module Organization
 
-`KEY_SUPER/` contains the SwiftUI host application. `KeySuperApp.swift` defines the app lifecycle, `ContentView.swift` provides the setup UI, and `FileCreator.swift` handles validated file creation requests. `FinderSyncExtension/` contains the Finder Sync extension, including contextual-menu construction and request forwarding. Each target has its own `Info.plist` and entitlements file. Xcode project configuration lives in `KEY_SUPER.xcodeproj/`.
+`Rightly/` contains the SwiftUI host application. `RightlyApp.swift` defines the app lifecycle, `ContentView.swift` provides the setup UI, and `FileCreator.swift` handles validated file creation requests. `RightlyFinderExtension/` contains the Finder Sync extension, including contextual-menu construction and request forwarding. `RightlyUninstaller/` contains the non-sandboxed helper that unregisters the Finder extension before removal. Xcode project configuration lives in `Rightly.xcodeproj/`.
 
-Office template sources live in `TemplateSources/`, while the packaged XLSX and DOCX resources live in `KEY_SUPER/Templates/`. There is currently no test target or asset catalog. Add tests under `KEY_SUPERTests/` and `FinderSyncExtensionTests/` when introducing testable logic.
+Office template sources live in `TemplateSources/`, while the packaged XLSX and DOCX resources live in `Rightly/Templates/`. There is currently no test target or asset catalog. Add tests under `RightlyTests/` and `RightlyFinderExtensionTests/` when introducing testable logic.
 
 ## Architecture Overview
 
-The sandboxed Finder extension identifies the selected directory and sends a `key-super://create` request. The host app performs filesystem writes because Finder extensions cannot write freely outside their sandbox. Keep this separation intact. The extension should remain fast and avoid networking, persistent polling, or file-content reads.
+The sandboxed Finder extension identifies the selected directory and sends a `rightly://create` request. The host app performs filesystem writes because Finder extensions cannot write freely outside their sandbox. Keep this separation intact. The extension should remain fast and avoid networking, persistent polling, or file-content reads. The host app invokes the embedded non-sandboxed `RightlyUninstaller` helper only for Finder extension deregistration.
 
-Debug uses a local configuration file so Personal Team builds can be tested without App Groups. Release uses `group.com.keysuper.app`. Never copy Debug temporary-exception entitlements into Release.
+Debug uses a local configuration file so Personal Team builds can be tested without App Groups. Release uses `group.com.rightly.app`. Never copy Debug temporary-exception entitlements into Release.
 
 ## Build, Test, and Development Commands
 
-- `open KEY_SUPER.xcodeproj` opens the project in Xcode.
-- `xcodebuild -project KEY_SUPER.xcodeproj -scheme "KEY SUPER" -configuration Debug -sdk macosx build` builds both targets with local signing.
-- `xcodebuild -project KEY_SUPER.xcodeproj -scheme "KEY SUPER" -configuration Release -sdk macosx -derivedDataPath /tmp/key-super-build build CODE_SIGNING_ALLOWED=NO` performs a certificate-independent compile check.
-- In Xcode, use `Shift+Cmd+K` before testing extension-registration or entitlement changes, then run the `KEY SUPER` scheme with `Cmd+R`.
+- `open Rightly.xcodeproj` opens the project in Xcode.
+- `xcodebuild -project Rightly.xcodeproj -scheme Rightly -configuration Debug -sdk macosx build` builds both targets with local signing.
+- `xcodebuild -project Rightly.xcodeproj -scheme Rightly -configuration Release -sdk macosx -derivedDataPath /tmp/rightly-build build CODE_SIGNING_ALLOWED=NO` performs a certificate-independent compile check.
+- In Xcode, use `Shift+Cmd+K` before testing extension-registration or entitlement changes, then run the `Rightly` scheme with `Cmd+R`.
 
 ## Coding Style & Naming Conventions
 
-Use four-space indentation and standard Swift API naming: `UpperCamelCase` for types and `lowerCamelCase` for methods and properties. Prefer small enums and focused helpers over stringly typed branching. Keep user-facing text in concise Simplified Chinese. Use `Logger` with subsystem `com.keysuper.app`; preserve the existing `E`, `A`, and `F` diagnostic prefixes while troubleshooting.
+Use four-space indentation and standard Swift API naming: `UpperCamelCase` for types and `lowerCamelCase` for methods and properties. Prefer small enums and focused helpers over stringly typed branching. Keep user-facing text in concise Simplified Chinese. Use `Logger` with subsystem `com.rightly.app`; preserve the existing `E`, `A`, and `F` diagnostic prefixes while troubleshooting.
 
 ## Testing Guidelines
 
